@@ -1,0 +1,22 @@
+# Dependencies, generated output and local settings
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+.tmp/
+tmp/
+*.log
+.env
+.env.*
+!.env.example
+project.private.config.json
+miniprogram_npm/
+.DS_Store
+Thumbs.db
+
+# >>> Comet managed project state >>>
+!/.comet/
+/.comet/*
+!/.comet/config.yaml
+# <<< Comet managed project state <<<
