@@ -5,6 +5,7 @@
 ## 入口
 
 - [已确认方向与重建边界](docs/project/overview.md)
+- [整体重建规划与功能恢复清单](docs/project/rebuild-plan.md)
 - 首条 Native change：`plan-staged-rebuild`，用于整体重建规划，不是主题或编辑器的实现任务。
 - Codex 入口：`AGENTS.md`；Claude Code 入口：`CLAUDE.md`。
 

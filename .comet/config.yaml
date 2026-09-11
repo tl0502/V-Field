@@ -22,9 +22,10 @@ knowledge:
   # 可选值：local | remote
   provider: local
   local:
-    # 新版只主动检索已经确认的新方向；旧实现资料留在旧项目按需查阅。
+    # 新版主动检索已确认方向及整体规划；旧实现资料留在旧项目按需查阅。
     include:
       - docs/project/overview.md
+      - docs/project/rebuild-plan.md
 # Native 工作流配置，不会改变 Classic 的状态或行为。
 native:
   # Native 规格和 change 的存放根目录；运行时数据始终位于 .comet。
