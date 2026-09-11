@@ -1,0 +1,81 @@
+{
+  "pages": [
+    {
+      "path": "pages/theme/theme",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "@bgColor",
+        "backgroundColorTop": "@bgColorTop",
+        "backgroundColorBottom": "@bgColorBottom"
+      }
+    },
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "@bgColor",
+        "backgroundColorTop": "@bgColorTop",
+        "backgroundColorBottom": "@bgColorBottom"
+      }
+    },
+    {
+      "path": "pages/second/second",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "@bgColor",
+        "backgroundColorTop": "@bgColorTop",
+        "backgroundColorBottom": "@bgColorBottom"
+      }
+    },
+    {
+      "path": "pages/native/native",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "@bgColor",
+        "backgroundColorTop": "@bgColorTop",
+        "backgroundColorBottom": "@bgColorBottom"
+      }
+    }
+  ],
+  "tabBar": {
+    "color": "@tabFontColor",
+    "selectedColor": "@tabSelectedColor",
+    "backgroundColor": "@tabBgColor",
+    "borderStyle": "@tabBorderStyle",
+    "list": [
+      {
+        "pagePath": "pages/theme/theme",
+        "text": "主题",
+        "iconPath": "static/tab.png",
+        "selectedIconPath": "static/tab-active.png"
+      },
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tab.png",
+        "selectedIconPath": "static/tab-active.png"
+      },
+      {
+        "pagePath": "pages/second/second",
+        "text": "次页",
+        "iconPath": "static/tab.png",
+        "selectedIconPath": "static/tab-active.png"
+      },
+      {
+        "pagePath": "pages/native/native",
+        "text": "原生",
+        "iconPath": "static/tab.png",
+        "selectedIconPath": "static/tab-active.png"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationStyle": "custom",
+    "navigationBarBackgroundColor": "@navBgColor",
+    "navigationBarTextStyle": "@navTxtStyle",
+    "backgroundColor": "@bgColor",
+    "backgroundTextStyle": "@bgTxtStyle",
+    "backgroundColorTop": "@bgColorTop",
+    "backgroundColorBottom": "@bgColorBottom"
+  }
+}

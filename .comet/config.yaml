@@ -26,6 +26,8 @@ knowledge:
     include:
       - docs/project/overview.md
       - docs/project/rebuild-plan.md
+      - docs/project/product-rules.md
+      - docs/project/feasibility.md
 # Native 工作流配置，不会改变 Classic 的状态或行为。
 native:
   # Native 规格和 change 的存放根目录；运行时数据始终位于 .comet。

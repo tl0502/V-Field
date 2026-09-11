@@ -6,7 +6,9 @@
 
 - [已确认方向与重建边界](docs/project/overview.md)
 - [整体重建规划与功能恢复清单](docs/project/rebuild-plan.md)
-- 首条 Native change：`plan-staged-rebuild`，用于整体重建规划，不是主题或编辑器的实现任务。
+- [P1 产品规则](docs/project/product-rules.md)
+- [P1 关键可行性](docs/project/feasibility.md)
+- 当前 Native change：`p1-product-rules-feasibility`（产品规则与可行性，不是业务实现）。已归档：`plan-staged-rebuild`（整体规划）。
 - Codex 入口：`AGENTS.md`；Claude Code 入口：`CLAUDE.md`。
 
 在本目录运行 `comet.cmd status . --json` 查看实际进度。正式 brief、完整目标规格和 Runtime 状态位于 `docs/comet/changes/`；只有通过 Native 验收和归档的规格才进入正式基线。

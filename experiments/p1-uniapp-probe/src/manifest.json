@@ -1,0 +1,19 @@
+{
+  "name": "p1-uniapp-probe",
+  "appid": "",
+  "description": "P1 实验原型，非正式业务工程",
+  "versionName": "0.0.1",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wx61e9f1a8a3914c20",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": false
+    },
+    "usingComponents": true,
+    "darkmode": true,
+    "themeLocation": "theme.json"
+  }
+}
