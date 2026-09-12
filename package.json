@@ -1,0 +1,20 @@
+{
+  "name": "vquan-next",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/miniprogram",
+    "apps/admin-platform",
+    "apps/admin-domain"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @vquan/api",
+    "dev:admin-platform": "npm run dev -w @vquan/admin-platform",
+    "dev:admin-domain": "npm run dev -w @vquan/admin-domain",
+    "dev:miniprogram": "npm run dev:mp-weixin -w @vquan/miniprogram",
+    "db:reset": "npm run db:reset -w @vquan/api",
+    "db:migrate": "npm run db:migrate -w @vquan/api",
+    "bootstrap": "npm run bootstrap -w @vquan/api",
+    "test:api": "npm test -w @vquan/api"
+  }
+}

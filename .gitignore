@@ -11,6 +11,8 @@ tmp/
 .env.*
 !.env.example
 project.private.config.json
+# Accidental WeChat DevTools project if apps/ is opened instead of dist
+/apps/project.config.json
 miniprogram_npm/
 .DS_Store
 Thumbs.db
