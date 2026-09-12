@@ -1,0 +1,19 @@
+{
+  "name": "vquan-miniprogram",
+  "appid": "",
+  "description": "v域正式用户端，仅编译微信小程序",
+  "versionName": "0.0.1",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wx881064c3dbe54a18",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": false
+    },
+    "usingComponents": true,
+    "darkmode": false,
+    "themeLocation": "theme.json"
+  }
+}

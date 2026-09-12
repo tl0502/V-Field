@@ -1,0 +1,56 @@
+// darkmode 关闭时 @theme 变量不生效，窗口/tabBar 暂写 theme.json 的 light 字面值。
+// 深色 token 仍在 theme.json，勿删。恢复跟随系统时改回 @变量。
+{
+  "pages": [
+    {
+      "path": "pages/auth/auth",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationBarBackgroundColor": "#f7f8fa",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f7f8fa",
+        "backgroundColorTop": "#f7f8fa",
+        "backgroundColorBottom": "#f7f8fa"
+      }
+    },
+    {
+      "path": "pages/me/me",
+      "style": {
+        "navigationBarTitleText": "身份",
+        "navigationBarBackgroundColor": "#f7f8fa",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f7f8fa",
+        "backgroundColorTop": "#f7f8fa",
+        "backgroundColorBottom": "#f7f8fa"
+      }
+    }
+  ],
+  "tabBar": {
+    "color": "#8e949b",
+    "selectedColor": "#111111",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/auth/auth",
+        "text": "登录",
+        "iconPath": "static/tab-home.png",
+        "selectedIconPath": "static/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "身份",
+        "iconPath": "static/tab-profile.png",
+        "selectedIconPath": "static/tab-profile-active.png"
+      }
+    ]
+  },
+  "globalStyle": {
+    "navigationBarBackgroundColor": "#f7f8fa",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f7f8fa",
+    "backgroundTextStyle": "light",
+    "backgroundColorTop": "#f7f8fa",
+    "backgroundColorBottom": "#f7f8fa"
+  }
+}
