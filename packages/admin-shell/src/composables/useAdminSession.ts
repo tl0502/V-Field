@@ -1,20 +1,23 @@
 import { computed, readonly, ref, shallowRef } from 'vue'
 import { authErrorMessage } from '../authErrorMessage'
+import { adminShellConfig } from '../shell'
 import type { AccountMe, AuthResponse } from '../types'
-
-const sessionStorageKey = 'vquan.admin-domain.session'
 
 const me = ref<AccountMe | null>(null)
 const token = shallowRef('')
 const busy = shallowRef(false)
 const errorMessage = shallowRef('')
 
+function storageKey() {
+  return adminShellConfig().storageKey
+}
+
 function persistToken(value: string) {
   token.value = value
   if (value) {
-    sessionStorage.setItem(sessionStorageKey, value)
+    sessionStorage.setItem(storageKey(), value)
   } else {
-    sessionStorage.removeItem(sessionStorageKey)
+    sessionStorage.removeItem(storageKey())
   }
 }
 
@@ -46,7 +49,7 @@ export function useAdminSession() {
   const isPlatformOperator = computed(() => Boolean(me.value?.roles.platformOperator))
 
   async function refresh() {
-    const stored = sessionStorage.getItem(sessionStorageKey)
+    const stored = sessionStorage.getItem(storageKey())
     if (!stored) {
       me.value = null
       persistToken('')

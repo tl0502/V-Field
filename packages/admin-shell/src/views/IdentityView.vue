@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import IdentityPanel from '../components/auth/IdentityPanel.vue'
+import IdentityPanel from '../components/IdentityPanel.vue'
 import { useAdminSession } from '../composables/useAdminSession'
+import { adminShellConfig } from '../shell'
 
 const router = useRouter()
 const { me, logout } = useAdminSession()
+const { identityTitle } = adminShellConfig()
 
 async function onLogout() {
   await logout()
@@ -15,7 +17,7 @@ async function onLogout() {
 <template>
   <main v-if="me" class="page">
     <section class="card">
-      <IdentityPanel title="域管理 · 当前身份" :me="me" @logout="onLogout" />
+      <IdentityPanel :title="identityTitle" :me="me" @logout="onLogout" />
     </section>
   </main>
 </template>

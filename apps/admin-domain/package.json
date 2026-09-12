@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vquan/admin-shell": "*",
     "vue": "3.4.21",
     "vue-router": "4.4.5"
   },

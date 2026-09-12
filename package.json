@@ -5,7 +5,8 @@
     "apps/api",
     "apps/miniprogram",
     "apps/admin-platform",
-    "apps/admin-domain"
+    "apps/admin-domain",
+    "packages/*"
   ],
   "scripts": {
     "dev:api": "npm run dev -w @vquan/api",

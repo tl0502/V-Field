@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import AdminLoginForm from '../components/auth/AdminLoginForm.vue'
+import AdminLoginForm from '../components/AdminLoginForm.vue'
 import { useAdminSession } from '../composables/useAdminSession'
+import { adminShellConfig } from '../shell'
 
 const router = useRouter()
 const { busy, errorMessage, login } = useAdminSession()
+const { loginTitle, loginCopy } = adminShellConfig()
 
 async function onSubmit(payload: { loginName: string; password: string }) {
   try {
@@ -19,8 +21,8 @@ async function onSubmit(payload: { loginName: string; password: string }) {
 <template>
   <main class="page">
     <section class="card">
-      <h1 class="title">域管理登录</h1>
-      <p class="copy">使用同一套平台账号的管理登录名和密码。本轮只验证身份，不交付入域审批。</p>
+      <h1 class="title">{{ loginTitle }}</h1>
+      <p class="copy">{{ loginCopy }}</p>
       <AdminLoginForm :busy="busy" :error-message="errorMessage" @submit="onSubmit" />
     </section>
   </main>

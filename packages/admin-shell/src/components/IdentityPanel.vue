@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { AccountMe } from '../../types'
+import type { AccountMe } from '../types'
 
 const props = defineProps<{
   title: string

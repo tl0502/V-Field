@@ -1,0 +1,13 @@
+{
+  "name": "@vquan/admin-shell",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "vue": "3.4.21",
+    "vue-router": "4.4.5"
+  }
+}
