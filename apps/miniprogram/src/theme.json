@@ -9,9 +9,13 @@
     "tabFontColor": "#8e949b",
     "tabSelectedColor": "#111111",
     "tabBgColor": "#ffffff",
-    "tabBorderStyle": "black",
+    "tabBorderStyle": "white",
     "tabHomeIcon": "static/tab-home.png",
     "tabHomeIconActive": "static/tab-home-active.png",
+    "tabDiscoveryIcon": "static/tab-discovery.png",
+    "tabDiscoveryIconActive": "static/tab-discovery-active.png",
+    "tabMessagesIcon": "static/tab-messages.png",
+    "tabMessagesIconActive": "static/tab-messages-active.png",
     "tabProfileIcon": "static/tab-profile.png",
     "tabProfileIconActive": "static/tab-profile-active.png"
   },
@@ -28,6 +32,10 @@
     "tabBorderStyle": "white",
     "tabHomeIcon": "static/tab-home-dark.png",
     "tabHomeIconActive": "static/tab-home-dark-active.png",
+    "tabDiscoveryIcon": "static/tab-discovery-dark.png",
+    "tabDiscoveryIconActive": "static/tab-discovery-dark-active.png",
+    "tabMessagesIcon": "static/tab-messages-dark.png",
+    "tabMessagesIconActive": "static/tab-messages-dark-active.png",
     "tabProfileIcon": "static/tab-profile-dark.png",
     "tabProfileIconActive": "static/tab-profile-dark-active.png"
   }

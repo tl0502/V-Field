@@ -10,12 +10,28 @@ const { scheme } = useSystemScheme({ bindPage: true })
 onShow(() => {
   void refresh()
 })
+
+function goLogin() {
+  uni.navigateTo({ url: '/pages/auth/auth' })
+}
 </script>
 
 <template>
   <view class="page-shell" :data-scheme="scheme">
-    <AccountIdentityPanel v-if="scheme === 'light'" :me="me" :busy="busy" @logout="logout" />
-    <AccountIdentityPanel v-else :me="me" :busy="busy" @logout="logout" />
+    <AccountIdentityPanel
+      v-if="scheme === 'light'"
+      :me="me"
+      :busy="busy"
+      @logout="logout"
+      @login="goLogin"
+    />
+    <AccountIdentityPanel
+      v-else
+      :me="me"
+      :busy="busy"
+      @logout="logout"
+      @login="goLogin"
+    />
   </view>
 </template>
 

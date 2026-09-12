@@ -3,9 +3,31 @@
 {
   "pages": [
     {
-      "path": "pages/auth/auth",
+      "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "登录",
+        "navigationBarTitleText": "首页",
+        "navigationBarBackgroundColor": "#f7f8fa",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f7f8fa",
+        "backgroundColorTop": "#f7f8fa",
+        "backgroundColorBottom": "#f7f8fa"
+      }
+    },
+    {
+      "path": "pages/discovery/discovery",
+      "style": {
+        "navigationBarTitleText": "发现",
+        "navigationBarBackgroundColor": "#f7f8fa",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f7f8fa",
+        "backgroundColorTop": "#f7f8fa",
+        "backgroundColorBottom": "#f7f8fa"
+      }
+    },
+    {
+      "path": "pages/messages/messages",
+      "style": {
+        "navigationBarTitleText": "消息",
         "navigationBarBackgroundColor": "#f7f8fa",
         "navigationBarTextStyle": "black",
         "backgroundColor": "#f7f8fa",
@@ -16,7 +38,18 @@
     {
       "path": "pages/me/me",
       "style": {
-        "navigationBarTitleText": "身份",
+        "navigationBarTitleText": "我的",
+        "navigationBarBackgroundColor": "#f7f8fa",
+        "navigationBarTextStyle": "black",
+        "backgroundColor": "#f7f8fa",
+        "backgroundColorTop": "#f7f8fa",
+        "backgroundColorBottom": "#f7f8fa"
+      }
+    },
+    {
+      "path": "pages/auth/auth",
+      "style": {
+        "navigationBarTitleText": "登录",
         "navigationBarBackgroundColor": "#f7f8fa",
         "navigationBarTextStyle": "black",
         "backgroundColor": "#f7f8fa",
@@ -29,17 +62,29 @@
     "color": "#8e949b",
     "selectedColor": "#111111",
     "backgroundColor": "#ffffff",
-    "borderStyle": "black",
+    "borderStyle": "white",
     "list": [
       {
-        "pagePath": "pages/auth/auth",
-        "text": "登录",
+        "pagePath": "pages/index/index",
+        "text": "",
         "iconPath": "static/tab-home.png",
         "selectedIconPath": "static/tab-home-active.png"
       },
       {
+        "pagePath": "pages/discovery/discovery",
+        "text": "",
+        "iconPath": "static/tab-discovery.png",
+        "selectedIconPath": "static/tab-discovery-active.png"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "",
+        "iconPath": "static/tab-messages.png",
+        "selectedIconPath": "static/tab-messages-active.png"
+      },
+      {
         "pagePath": "pages/me/me",
-        "text": "身份",
+        "text": "",
         "iconPath": "static/tab-profile.png",
         "selectedIconPath": "static/tab-profile-active.png"
       }

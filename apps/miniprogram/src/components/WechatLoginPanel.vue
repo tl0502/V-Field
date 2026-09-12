@@ -22,9 +22,33 @@ function toggleTerms() {
   termsAccepted.value = !termsAccepted.value
 }
 
+function openTerms() {
+  uni.showModal({
+    title: '用户协议',
+    content:
+      '账号仅供本人使用。发布内容须合法、真实，不得违法、虚假或侵权。违规内容可能被下架，账号可能被限制使用。平台不参与交易，也不保证用户信息真实。',
+    confirmText: '我知道了',
+    showCancel: false
+  })
+}
+
+function openPrivacy() {
+  uni.showModal({
+    title: '隐私政策',
+    content:
+      '我们只收集为你提供服务所必需的信息：微信登录身份用于建立账号；头像和昵称用于在社区中展示身份；手机号仅用于账号安全验证，不会公开展示，也不会用于营销或提供给第三方。你可以随时退出登录。',
+    confirmText: '我知道了',
+    showCancel: false
+  })
+}
+
 function submit() {
   if (props.busy) return
   if (!termsAccepted.value) {
+    uni.showToast({
+      title: '请先阅读并同意用户协议和隐私政策',
+      icon: 'none'
+    })
     return
   }
   emit('login')
@@ -41,22 +65,26 @@ function submit() {
     </view>
 
     <view class="auth-actions">
-      <view class="consent-box" @click="toggleTerms">
-        <view class="consent-mark" :class="{ 'consent-mark--on': termsAccepted }">
-          <text class="consent-tick">✓</text>
+      <view class="consent-box">
+        <view class="consent-check" @click="toggleTerms">
+          <view class="consent-mark" :class="{ 'consent-mark--on': termsAccepted }">
+            <text class="consent-tick">✓</text>
+          </view>
         </view>
-        <text class="consent-copy">我已阅读并同意用户协议和隐私政策</text>
+        <text class="consent-copy" @click="toggleTerms">我已阅读并同意</text>
+        <text class="consent-link" @click="openTerms">用户协议</text>
+        <text class="consent-copy">和</text>
+        <text class="consent-link" @click="openPrivacy">隐私政策</text>
       </view>
       <button
         class="wechat-login-button"
         :class="buttonClass"
         :loading="busy"
-        :disabled="busy || !termsAccepted"
+        :disabled="busy"
         @click="submit"
       >
         {{ buttonLabel }}
       </button>
-      <text v-if="!termsAccepted" class="auth-hint">请先勾选协议再登录</text>
       <text v-if="errorMessage" class="auth-error">{{ errorMessage }}</text>
     </view>
   </view>
@@ -114,6 +142,17 @@ function submit() {
 .consent-box {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.consent-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 56rpx;
+  height: 56rpx;
+  margin-left: -12rpx;
 }
 
 .consent-mark {
@@ -145,9 +184,19 @@ function submit() {
 }
 
 .consent-copy {
+  margin-right: 4rpx;
   color: #8e949b;
   font-size: 24rpx;
   line-height: 1.9;
+}
+
+.consent-link {
+  margin: 0 4rpx;
+  color: #111111;
+  font-size: 24rpx;
+  line-height: 1.9;
+  text-decoration: underline;
+  text-underline-offset: 4rpx;
 }
 
 .wechat-login-button {
@@ -168,16 +217,11 @@ function submit() {
   opacity: 0.72;
 }
 
-.auth-hint,
 .auth-error {
   display: block;
   margin-top: 24rpx;
   font-size: 23rpx;
   line-height: 1.55;
-}
-
-.auth-hint {
-  color: #8e949b;
 }
 
 .auth-error {
@@ -204,9 +248,12 @@ function submit() {
     background-color: #1c1c1e;
   }
 
-  .consent-copy,
-  .auth-hint {
+  .consent-copy {
     color: #8e949b;
+  }
+
+  .consent-link {
+    color: #f5f5f5;
   }
 
   .auth-error {

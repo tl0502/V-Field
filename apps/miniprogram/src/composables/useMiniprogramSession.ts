@@ -76,8 +76,14 @@ export function useMiniprogramSession() {
       persistToken(body.token)
       const { token: _token, ...account } = body
       me.value = account
-      uni.switchTab({ url: '/pages/me/me' })
+      const stack = getCurrentPages()
+      if (stack.length > 1) {
+        uni.navigateBack()
+      } else {
+        uni.switchTab({ url: '/pages/me/me' })
+      }
     } catch (error) {
+      // TODO: 把接口错误码翻成用户可读文案，不要直接展示 invalid_credentials 等代号。
       errorMessage.value = error instanceof Error ? error.message : 'login_failed'
     } finally {
       busy.value = false

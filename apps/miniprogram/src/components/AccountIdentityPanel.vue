@@ -9,6 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   logout: []
+  login: []
 }>()
 
 const roleText = computed(() => {
@@ -27,7 +28,8 @@ const notDelivered = computed(() => props.me?.notDelivered ?? ['assign-domain-op
   <view class="identity-panel">
     <view v-if="!me" class="empty-card">
       <text class="empty-title">尚未登录</text>
-      <text class="empty-copy">请先在登录页完成微信登录。本轮只交付身份骨架，不交付发布或阅读。</text>
+      <text class="empty-copy">请先完成微信登录。本轮只交付身份骨架，不交付发布或阅读。</text>
+      <button class="login-button" :disabled="busy" @click="emit('login')">去登录</button>
     </view>
     <view v-else class="card">
       <text class="label">平台账号</text>
@@ -76,14 +78,24 @@ const notDelivered = computed(() => props.me?.notDelivered ?? ['assign-domain-op
   word-break: break-all;
 }
 
+.login-button,
 .logout-button {
   width: 100%;
   height: 80rpx;
   margin-top: 12rpx;
   border-radius: 12rpx;
+  font-size: 28rpx;
+}
+
+.login-button {
+  background-color: #ff6a00;
+  color: #ffffff;
+  border: 0;
+}
+
+.logout-button {
   background-color: #ffffff;
   color: #d94b3d;
-  font-size: 28rpx;
   border: 1rpx solid #d94b3d;
 }
 
@@ -112,6 +124,10 @@ const notDelivered = computed(() => props.me?.notDelivered ?? ['assign-domain-op
 
   .logout-button {
     background-color: #1c1c1e;
+  }
+
+  .login-button {
+    background-color: #ff6a00;
   }
 }
 */
