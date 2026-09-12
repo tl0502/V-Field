@@ -1,15 +1,10 @@
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
 import WechatLoginPanel from '../../components/WechatLoginPanel.vue'
 import { useMiniprogramSession } from '../../composables/useMiniprogramSession'
 import { useSystemScheme } from '../../composables/useSystemScheme'
 
-const { busy, errorMessage, refresh, loginWithWeChat } = useMiniprogramSession()
+const { busy, errorMessage, loginWithWeChat } = useMiniprogramSession()
 const { scheme } = useSystemScheme({ bindPage: true })
-
-onShow(() => {
-  void refresh()
-})
 </script>
 
 <template>

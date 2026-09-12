@@ -9,10 +9,12 @@
     "appid": "wx881064c3dbe54a18",
     "setting": {
       "urlCheck": false,
-      "es6": true,
-      "minified": false
+      "es6": false,
+      "enhance": false,
+      "minified": true
     },
     "usingComponents": true,
+    "lazyCodeLoading": "requiredComponents",
     "darkmode": false,
     "themeLocation": "theme.json"
   }

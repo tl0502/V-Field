@@ -20,8 +20,10 @@ const roleText = computed(() => {
   return '平台账号用户'
 })
 
-const accountId = computed(() => props.me?.account.id ?? '')
-const notDelivered = computed(() => props.me?.notDelivered ?? ['assign-domain-operator', 'join-approval', 'publish', 'read'])
+const accountId = computed(() => (props.me ? props.me.account.id : ''))
+const notDelivered = computed(() =>
+  props.me ? props.me.notDelivered : ['assign-domain-operator', 'join-approval', 'publish', 'read']
+)
 </script>
 
 <template>

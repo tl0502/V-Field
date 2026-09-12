@@ -10,5 +10,5 @@ const authErrorCopy: Record<string, string> = {
 
 export function authErrorMessage(error: unknown, fallback = '登录失败') {
   const code = error instanceof Error ? error.message : ''
-  return authErrorCopy[code] ?? fallback
+  return authErrorCopy[code] || fallback
 }
