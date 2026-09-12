@@ -51,14 +51,16 @@ export function useAdminSession() {
   async function refresh() {
     const stored = sessionStorage.getItem(storageKey())
     if (!stored) {
-      me.value = null
-      persistToken('')
+      if (!token.value) me.value = null
       return
     }
     persistToken(stored)
     try {
-      me.value = await request<AccountMe>('/api/auth/me')
+      const account = await request<AccountMe>('/api/auth/me')
+      if (sessionStorage.getItem(storageKey()) !== stored) return
+      me.value = account
     } catch {
+      if (sessionStorage.getItem(storageKey()) !== stored) return
       me.value = null
       persistToken('')
     }
