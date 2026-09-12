@@ -238,11 +238,38 @@ test('auth me and logout require a matching audience header', async (t) => {
   const base = await listen(t, auth);
 
   const missing = await jsonRequest(base, '/api/auth/me', { token: login.token });
-  assert.equal(missing.status, 401);
+  assert.equal(missing.status, 200);
+  assert.equal(missing.body.audience, 'admin');
 
   const wrong = await jsonRequest(base, '/api/auth/me', {
     token: login.token,
     audience: 'miniprogram'
   });
   assert.equal(wrong.status, 401);
+});
+
+test('auth me accepts audience query and x-vquan-session fallbacks', async (t) => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const login = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const base = await listen(t, auth);
+
+  const viaQuery = await jsonRequest(base, '/api/auth/me?audience=admin', {
+    token: login.token
+  });
+  assert.equal(viaQuery.status, 200);
+  assert.equal(viaQuery.body.roles.platformOperator, true);
+
+  const viaSessionHeader = await jsonRequest(base, '/api/auth/me', {
+    audience: 'admin',
+    headers: { 'x-vquan-session': login.token }
+  });
+  assert.equal(viaSessionHeader.status, 200);
+  assert.equal(viaSessionHeader.body.account.id, login.account.id);
 });

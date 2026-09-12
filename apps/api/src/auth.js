@@ -156,16 +156,18 @@ export function createAuthService({
     if (typeof token !== 'string' || !token) {
       throw new AuthError('unauthorized', 401);
     }
-    if (expectedAudience !== 'admin' && expectedAudience !== 'miniprogram') {
-      throw new AuthError('unauthorized', 401);
-    }
 
     const session = await repository.findSessionByTokenHash(hashSessionToken(token), now());
     if (!session || session.status !== 'active') {
       throw new AuthError('unauthorized', 401);
     }
-    if (session.audience !== expectedAudience) {
-      throw new AuthError('unauthorized', 401);
+    if (expectedAudience) {
+      if (expectedAudience !== 'admin' && expectedAudience !== 'miniprogram') {
+        throw new AuthError('unauthorized', 401);
+      }
+      if (session.audience !== expectedAudience) {
+        throw new AuthError('unauthorized', 401);
+      }
     }
 
     const account = await repository.getAccountProjection(session.account_id);

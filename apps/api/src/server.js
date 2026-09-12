@@ -20,13 +20,16 @@ const maximumBodyBytes = 64 * 1024;
 function applyApiHeaders(res) {
   res.setHeader('access-control-allow-origin', '*');
   res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
-  res.setHeader('access-control-allow-headers', 'content-type, authorization, x-vquan-audience');
+  res.setHeader(
+    'access-control-allow-headers',
+    'content-type, authorization, x-vquan-audience, x-vquan-session'
+  );
 }
 
 function json(res, statusCode, body) {
   const payload = JSON.stringify(body);
   res.writeHead(statusCode, {
-    'content-type': 'application/json; charset=utf-8',
+    'content-type': 'application/json',
     'content-length': Buffer.byteLength(payload)
   });
   res.end(payload);
@@ -59,15 +62,22 @@ async function readJsonBody(req) {
   }
 }
 
-function bearerToken(req) {
-  const header = Array.prototype.concat(req.headers.authorization ?? [])[0];
-  const match = typeof header === 'string' ? header.match(/^Bearer\s+([^\s]+)$/i) : null;
-  return match ? match[1] : '';
+function firstHeader(req, name) {
+  const header = Array.prototype.concat(req.headers[name] ?? [])[0];
+  return typeof header === 'string' ? header.trim() : '';
 }
 
-function requestAudience(req) {
-  const header = Array.prototype.concat(req.headers['x-vquan-audience'] ?? [])[0];
-  return typeof header === 'string' ? header.trim() : '';
+function sessionToken(req) {
+  const authorization = firstHeader(req, 'authorization');
+  const match = authorization ? authorization.match(/^Bearer\s+([^\s]+)$/i) : null;
+  if (match) return match[1];
+  return firstHeader(req, 'x-vquan-session');
+}
+
+function requestAudience(req, url) {
+  const header = firstHeader(req, 'x-vquan-audience');
+  if (header) return header;
+  return (url.searchParams.get('audience') ?? '').trim();
 }
 
 export function createApp({ auth }) {
@@ -114,13 +124,13 @@ export function createApp({ auth }) {
       }
 
       if (req.method === 'GET' && pathname === '/api/auth/me') {
-        const { body } = await auth.readSession(bearerToken(req), requestAudience(req));
+        const { body } = await auth.readSession(sessionToken(req), requestAudience(req, url));
         json(res, 200, body);
         return;
       }
 
       if (req.method === 'POST' && pathname === '/api/auth/logout') {
-        json(res, 200, await auth.logout(bearerToken(req), requestAudience(req)));
+        json(res, 200, await auth.logout(sessionToken(req), requestAudience(req, url)));
         return;
       }
 
