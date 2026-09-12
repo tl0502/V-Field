@@ -1,18 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import IdentityPanel from '../components/auth/IdentityPanel.vue'
 import { useAdminSession } from '../composables/useAdminSession'
 
 const router = useRouter()
-const { me, isAuthed, refresh, logout } = useAdminSession()
-
-onMounted(async () => {
-  await refresh()
-  if (!isAuthed.value) {
-    await router.replace({ name: 'login' })
-  }
-})
+const { me, logout } = useAdminSession()
 
 async function onLogout() {
   await logout()
