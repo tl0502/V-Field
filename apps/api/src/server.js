@@ -145,7 +145,7 @@ export function createApp({ auth }) {
 }
 
 export async function startServer(port = getPort(), host = getHost()) {
-  const pool = createDatabasePool(getDatabaseUrl());
+  const pool = await createDatabasePool(getDatabaseUrl());
   await runMigrations(pool);
 
   const auth = createAuthService({

@@ -34,25 +34,28 @@ const isMainModule =
   resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isMainModule) {
-  const pool = createDatabasePool(getDatabaseUrl());
-  const repository = createIdentityRepository(pool);
-
-  bootstrapFromEnv({
-    repository,
-    sessionTtlMs: getSessionTtlMs(),
-    appId: getWechatAppId()
-  })
-    .then((result) => {
-      console.log(`Bootstrapped platform operator loginName=${result.loginName} accountId=${result.accountId}`);
+  createDatabasePool(getDatabaseUrl())
+    .then(async (pool) => {
+      try {
+        const result = await bootstrapFromEnv({
+          repository: createIdentityRepository(pool),
+          sessionTtlMs: getSessionTtlMs(),
+          appId: getWechatAppId()
+        });
+        console.log(`Bootstrapped platform operator loginName=${result.loginName} accountId=${result.accountId}`);
+      } catch (error) {
+        if (error instanceof AuthError && error.code === 'platform_operator_exists') {
+          console.log('Platform operator already exists; bootstrap refused to overwrite');
+          process.exitCode = 0;
+          return;
+        }
+        throw error;
+      } finally {
+        await pool.end();
+      }
     })
     .catch((error) => {
-      if (error instanceof AuthError && error.code === 'platform_operator_exists') {
-        console.log('Platform operator already exists; bootstrap refused to overwrite');
-        process.exitCode = 0;
-        return;
-      }
       console.error('Bootstrap failed', error);
       process.exitCode = 1;
-    })
-    .finally(() => pool.end());
+    });
 }

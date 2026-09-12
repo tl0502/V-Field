@@ -29,17 +29,20 @@ if (isMainModule) {
 
   const databaseUrl = getDatabaseUrl();
   const target = describeDatabaseTarget(databaseUrl);
-  const pool = createDatabasePool(databaseUrl);
 
-  resetPublicSchema(pool)
-    .then(async () => {
-      console.log(`Dropped and recreated public on ${target.host}:${target.port}/${target.database}`);
-      const applied = await runMigrations(pool);
-      console.log(applied.length ? `Migrations applied: ${applied.join(', ')}` : 'No new migrations');
+  createDatabasePool(databaseUrl)
+    .then(async (pool) => {
+      try {
+        await resetPublicSchema(pool);
+        console.log(`Dropped and recreated public on ${target.host}:${target.port}/${target.database}`);
+        const applied = await runMigrations(pool);
+        console.log(applied.length ? `Migrations applied: ${applied.join(', ')}` : 'No new migrations');
+      } finally {
+        await pool.end();
+      }
     })
     .catch((error) => {
       console.error('Database reset failed', error);
       process.exitCode = 1;
-    })
-    .finally(() => pool.end());
+    });
 }

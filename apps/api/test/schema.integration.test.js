@@ -25,7 +25,7 @@ test('migrated database has identity tables and the auto-verify seed', async (t)
     return;
   }
 
-  const pool = createDatabasePool(databaseUrl);
+  const pool = await createDatabasePool(databaseUrl);
   t.after(() => pool.end());
 
   const tables = await pool.query(`

@@ -59,17 +59,19 @@ const isMainModule =
   resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isMainModule) {
-  const pool = createDatabasePool(getDatabaseUrl());
-
-  runMigrations(pool)
-    .then((applied) => {
-      console.log(
-        applied.length ? `PostgreSQL migrations applied: ${applied.join(', ')}` : 'PostgreSQL migrations already applied'
-      );
+  createDatabasePool(getDatabaseUrl())
+    .then(async (pool) => {
+      try {
+        const applied = await runMigrations(pool);
+        console.log(
+          applied.length ? `PostgreSQL migrations applied: ${applied.join(', ')}` : 'PostgreSQL migrations already applied'
+        );
+      } finally {
+        await pool.end();
+      }
     })
     .catch((error) => {
       console.error('PostgreSQL migration failed', error);
       process.exitCode = 1;
-    })
-    .finally(() => pool.end());
+    });
 }
