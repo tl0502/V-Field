@@ -1,4 +1,5 @@
 import { computed, readonly, ref, shallowRef } from 'vue'
+import { authErrorMessage } from '../authErrorMessage'
 import { apiBaseUrl, sessionStorageKey } from '../config'
 import type { AccountMe, AuthResponse } from '../types'
 
@@ -85,8 +86,7 @@ export function useMiniprogramSession() {
         uni.switchTab({ url: '/pages/me/me' })
       }
     } catch (error) {
-      // TODO: 把接口错误码翻成用户可读文案，不要直接展示 invalid_credentials 等代号。
-      errorMessage.value = error instanceof Error ? error.message : 'login_failed'
+      errorMessage.value = authErrorMessage(error)
     } finally {
       busy.value = false
     }
