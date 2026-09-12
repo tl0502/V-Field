@@ -38,12 +38,13 @@ async function listen(t, auth) {
   return `http://127.0.0.1:${address.port}`;
 }
 
-async function jsonRequest(base, path, { method = 'GET', body, token, headers = {} } = {}) {
+async function jsonRequest(base, path, { method = 'GET', body, token, audience, headers = {} } = {}) {
   const response = await fetch(`${base}${path}`, {
     method,
     headers: {
       ...(body ? { 'content-type': 'application/json' } : {}),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(audience ? { 'x-vquan-audience': audience } : {}),
       ...headers
     },
     body: body ? JSON.stringify(body) : undefined
@@ -152,7 +153,10 @@ test('HTTP admin login, me, logout and dev token rejection', async (t) => {
   assert.equal(login.status, 200);
   assert.equal(login.body.roles.platformOperator, true);
 
-  const me = await jsonRequest(base, '/api/auth/me', { token: login.body.token });
+  const me = await jsonRequest(base, '/api/auth/me', {
+    token: login.body.token,
+    audience: 'admin'
+  });
   assert.equal(me.status, 200);
   assert.equal(me.body.roles.platformOperator, true);
 
@@ -164,10 +168,81 @@ test('HTTP admin login, me, logout and dev token rejection', async (t) => {
 
   const logout = await jsonRequest(base, '/api/auth/logout', {
     method: 'POST',
-    token: login.body.token
+    token: login.body.token,
+    audience: 'admin'
   });
   assert.equal(logout.status, 200);
 
-  const meAfterLogout = await jsonRequest(base, '/api/auth/me', { token: login.body.token });
+  const meAfterLogout = await jsonRequest(base, '/api/auth/me', {
+    token: login.body.token,
+    audience: 'admin'
+  });
   assert.equal(meAfterLogout.status, 401);
+});
+
+test('re-login revokes the previous session for the same audience', async () => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+
+  const first = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const second = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+
+  await assert.rejects(
+    () => auth.readSession(first.token, 'admin'),
+    (error) => error instanceof AuthError && error.code === 'unauthorized'
+  );
+
+  const current = await auth.readSession(second.token, 'admin');
+  assert.equal(current.body.account.id, second.account.id);
+});
+
+test('miniprogram token cannot be used as an admin session', async (t) => {
+  const { auth } = createAuth();
+  const wechat = await auth.wechatLogin({ code: 'new-user' });
+  const base = await listen(t, auth);
+
+  const asAdmin = await jsonRequest(base, '/api/auth/me', {
+    token: wechat.token,
+    audience: 'admin'
+  });
+  assert.equal(asAdmin.status, 401);
+  assert.equal(asAdmin.body.error, 'unauthorized');
+
+  const asMiniprogram = await jsonRequest(base, '/api/auth/me', {
+    token: wechat.token,
+    audience: 'miniprogram'
+  });
+  assert.equal(asMiniprogram.status, 200);
+  assert.equal(asMiniprogram.body.audience, 'miniprogram');
+});
+
+test('auth me and logout require a matching audience header', async (t) => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const login = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const base = await listen(t, auth);
+
+  const missing = await jsonRequest(base, '/api/auth/me', { token: login.token });
+  assert.equal(missing.status, 401);
+
+  const wrong = await jsonRequest(base, '/api/auth/me', {
+    token: login.token,
+    audience: 'miniprogram'
+  });
+  assert.equal(wrong.status, 401);
 });

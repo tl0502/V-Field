@@ -18,7 +18,9 @@ function persistToken(value: string) {
 }
 
 async function request<T>(path: string, options: { method?: string; body?: unknown } = {}) {
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = {
+    'x-vquan-audience': 'admin'
+  }
   if (options.body !== undefined) {
     headers['content-type'] = 'application/json'
   }
@@ -71,6 +73,7 @@ export function useAdminSession() {
       const { token: _token, ...account } = body
       me.value = account
     } catch (error) {
+      // TODO: 把接口错误码翻成用户可读文案，不要直接展示 invalid_credentials 等代号。
       errorMessage.value = error instanceof Error ? error.message : 'login_failed'
       throw error
     } finally {

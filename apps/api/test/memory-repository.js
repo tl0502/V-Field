@@ -58,6 +58,14 @@ export function createMemoryRepository() {
       }
     },
 
+    async revokeActiveSessions(accountId, audience, now) {
+      for (const session of sessions.values()) {
+        if (session.account_id === accountId && session.audience === audience && !session.revoked_at) {
+          session.revoked_at = now;
+        }
+      }
+    },
+
     async findWechatIdentity(appId, openid) {
       return wechatIdentities.get(wechatKey(appId, openid)) ?? null;
     },

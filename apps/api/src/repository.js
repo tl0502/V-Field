@@ -73,6 +73,15 @@ export function createIdentityRepository(pool) {
     );
   }
 
+  async function revokeActiveSessions(accountId, audience, now) {
+    await pool.query(
+      `UPDATE auth_sessions
+       SET revoked_at = $3
+       WHERE account_id = $1 AND audience = $2 AND revoked_at IS NULL`,
+      [accountId, audience, now]
+    );
+  }
+
   async function findWechatIdentity(appId, openid) {
     const result = await pool.query(
       `SELECT id, account_id, app_id, openid, unionid
@@ -160,6 +169,7 @@ export function createIdentityRepository(pool) {
     createSession,
     findSessionByTokenHash,
     revokeSession,
+    revokeActiveSessions,
     findWechatIdentity,
     createWechatAccount,
     touchWechatLogin,

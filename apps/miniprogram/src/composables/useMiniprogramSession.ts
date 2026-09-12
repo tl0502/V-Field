@@ -17,7 +17,9 @@ function persistToken(value: string) {
 }
 
 async function request<T>(path: string, options: { method?: string; body?: unknown; token?: string } = {}) {
-  const header: Record<string, string> = {}
+  const header: Record<string, string> = {
+    'x-vquan-audience': 'miniprogram'
+  }
   if (options.body !== undefined) {
     header['content-type'] = 'application/json'
   }

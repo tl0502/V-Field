@@ -45,6 +45,7 @@ export function createAuthService({
   async function issueSession(accountId, audience) {
     const createdAt = now();
     const token = createSessionToken();
+    await repository.revokeActiveSessions(accountId, audience, createdAt);
     await repository.createSession({
       id: newId(),
       accountId,
@@ -151,13 +152,19 @@ export function createAuthService({
     return { token, ...presentAccount(account, 'miniprogram') };
   }
 
-  async function readSession(token) {
+  async function readSession(token, expectedAudience) {
     if (typeof token !== 'string' || !token) {
+      throw new AuthError('unauthorized', 401);
+    }
+    if (expectedAudience !== 'admin' && expectedAudience !== 'miniprogram') {
       throw new AuthError('unauthorized', 401);
     }
 
     const session = await repository.findSessionByTokenHash(hashSessionToken(token), now());
     if (!session || session.status !== 'active') {
+      throw new AuthError('unauthorized', 401);
+    }
+    if (session.audience !== expectedAudience) {
       throw new AuthError('unauthorized', 401);
     }
 
@@ -169,8 +176,8 @@ export function createAuthService({
     return { session, account, body: presentAccount(account, session.audience) };
   }
 
-  async function logout(token) {
-    const { session } = await readSession(token);
+  async function logout(token, expectedAudience) {
+    const { session } = await readSession(token, expectedAudience);
     await repository.revokeSession(session.id, now());
     return { ok: true };
   }
