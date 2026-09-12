@@ -1,0 +1,147 @@
+schema: comet.native.v4
+name: p2-runtime-foundation
+language: zh-CN
+phase: build
+status: active
+state_version: 3
+brief: brief.md
+shape_confirmation_hash: dad4ee6559e668d9520732211751c2e5be96bf9444cb03dbf7d6ddf80bc398e5
+spec_changes:
+  - capability: runtime-foundation
+    operation: create
+    source: specs/runtime-foundation/spec.md
+workspace:
+  isolation: current
+  change_branch: main
+  target_branch: main
+  finish: null
+loop:
+  stage: building
+  goal_cycle: 1
+  iteration: 1
+  attempt: 0
+  retry_epoch: 0
+  failed_iteration_count: 0
+  no_progress_count: 0
+  execution_failure_count: 0
+  previous_unresolved_ids: []
+  next_action: submit-builder-candidate
+acceptance:
+  - id: A1
+    source: brief.md
+    text: "A1: 仓库中存在正式工程
+      `apps/miniprogram`、`apps/api`、`apps/admin-platform`、`apps/admin-domain`，能\
+      在清空后的数据库上本地启动；`experiments/p1-uniapp-probe/` 仍标明为实验，且不是该骨架的拷贝升级。"
+    result: pending
+    reason: null
+  - id: A2
+    source: brief.md
+    text: "A2: 可以用正式身份完成：初始化首位平台运营者；管理密码登录识别为该运营者；小程序微信登录产生平台账号。没有开发令牌作为生产授权。"
+    result: pending
+    reason: null
+  - id: A3
+    source: brief.md
+    text: "A3:
+      物理表覆盖平台账号、微信身份、业务域、域成员、入域申请、运营者资格、管理凭证与会话；预置汽车验证域作为空数据种子存在。没有把内容发布表或旧库表写成\
+      已完成的 P2 交付。"
+    result: pending
+    reason: null
+  - id: A4
+    source: brief.md
+    text: "A4: 服务端为 Node.js + PostgreSQL；四套工程位于本仓库上述目录；连接串与密钥只出现在 gitignore
+      的本地环境文件，不把旧项目 `.env` 提交进新仓库。"
+    result: pending
+    reason: null
+  - id: A5
+    source: brief.md
+    text: "A5: 正式小程序开启官方 Dark Mode（`darkmode` + `theme.json` + 页面/组件内
+      `prefers-color-scheme`），没有 JS 涂色作为主题机制。"
+    result: pending
+    reason: null
+  - id: A6
+    source: brief.md
+    text: "A6: 对旧项目 `DATABASE_URL` 指向的数据库执行一次清空后，该库不再保留旧表和旧行，只存在本 change
+      的新空表；旧项目工作区文件未被修改。"
+    result: pending
+    reason: null
+  - id: A7
+    source: brief.md
+    text: "A7: 本轮交付止于骨架、空库与最小身份/鉴权；指定域运营者、入域审批、发布和阅读仍标明未交付。"
+    result: pending
+    reason: null
+  - id: A8
+    source: specs/runtime-foundation/spec.md
+    text: 四套正式工程可识别且探针仍是实验 - GIVEN 本 change 的实现已经落在新仓库。 - WHEN 查看仓库根与
+      `apps/`、`experiments/`。 - THEN 能看到上述四套正式工程；`experiments/p1-uniapp-probe/`
+      仍标明为实验；正式小程序不是该探针目录的重命名或原地升级。
+    result: pending
+    reason: null
+  - id: A9
+    source: specs/runtime-foundation/spec.md
+    text: 栈与密钥隔离符合确认 - GIVEN 读者或检查核对本仓库的技术栈与环境文件。 - WHEN 对照已确认决定。 - THEN 四套工程位于本仓库
+      `apps/` 下；API 为 Node.js 并使用 PostgreSQL；仓库中没有提交旧项目 `.env` 或明文密钥；S3
+      没有被写成已交付。
+    result: pending
+    reason: null
+  - id: A10
+    source: specs/runtime-foundation/spec.md
+    text: 一次清空后旧行消失且旧仓库文件未改 - GIVEN 实现使用旧项目 `DATABASE_URL` 指向的数据库，并且已经执行本 change
+      的一次清空与迁移。 - WHEN 核对该库的 `public` 表，并核对该旧项目工作区文件是否被修改。 - THEN 该库不再存在旧版
+      `users` / `vehicle_sheets` 等表及其行；只存在本规格的新表；旧项目源码与 `.env` 文件内容与清空前一致。
+    result: pending
+    reason: null
+  - id: A11
+    source: specs/runtime-foundation/spec.md
+    text: 新表覆盖身份与域实体且不含内容表 - GIVEN 清空后的迁移已经执行。 - WHEN 列出 `public` 用户表。 - THEN
+      能看到上表所列实体表，以及预置汽车验证域种子行；看不到作为本轮交付的内容发布表或旧 `vehicle_sheets` 表。
+    result: pending
+    reason: null
+  - id: A12
+    source: specs/runtime-foundation/spec.md
+    text: 初始化平台运营者后管理密码登录成功 - GIVEN 空库已迁移，并且已经用标明用途的配置执行初始化。 - WHEN
+      使用该配置中的登录名和密码调用管理登录，再读取当前用户。 - THEN 返回的平台账号持有平台运营者资格；没有使用开发令牌。
+    result: pending
+    reason: null
+  - id: A13
+    source: specs/runtime-foundation/spec.md
+    text: 小程序微信登录产生平台账号 - GIVEN 微信登录配置可用，或测试中使用可注入的微信客户端替身。 - WHEN
+      使用尚未绑定的微信身份调用小程序登录。 - THEN 创建平台账号和微信身份绑定，并返回小程序会话；该账号不会仅仅因为登录就成为域成员或域运营者。
+    result: pending
+    reason: null
+  - id: A14
+    source: specs/runtime-foundation/spec.md
+    text: 开发令牌不能作为正式授权 - GIVEN API 已经按本规格运行。 - WHEN 只携带旧式开发令牌、不携带正式会话访问需要身份的接口。 -
+      THEN 请求被拒绝；系统没有把开发令牌当作生产授权。
+    result: pending
+    reason: null
+  - id: A15
+    source: specs/runtime-foundation/spec.md
+    text: 正式小程序使用官方 Dark Mode 链路 - GIVEN 正式小程序工程已经创建。 - WHEN 检查 `manifest` /
+      `theme.json` / 页面与组件样式，以及源码中的主题相关 API。 - THEN 官方 Dark Mode
+      已开启且窗口色来自主题变量；业务深色规则写在媒体查询里；没有 JS 涂色作为主题机制。
+    result: pending
+    reason: null
+  - id: A16
+    source: specs/runtime-foundation/spec.md
+    text: 本轮未把发布闭环写成已完成 - GIVEN 读者核对本轮交付说明和可运行界面。 - WHEN 寻找指定域运营者、入域审批、发布或阅读。 - THEN
+      这些能力被标明未交付；本轮可验证的是骨架、空库和登录/身份。
+    result: pending
+    reason: null
+builder_handoff: null
+blockers: []
+verification: null
+history: []
+history_overflow:
+  dropped_entries: 0
+  first_dropped_at: null
+  last_dropped_at: null
+  outcome_counts:
+    pass: 0
+    fail: 0
+    blocked: 0
+    execution-error: 0
+    recovery: 0
+verification_result: pending
+verification_report: null
+archived: false
+created_at: 2026-09-11T17:47:04.689Z
