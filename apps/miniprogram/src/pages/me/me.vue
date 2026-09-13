@@ -4,7 +4,7 @@ import AccountIdentityPanel from '../../components/AccountIdentityPanel.vue'
 import { useMiniprogramSession } from '../../composables/useMiniprogramSession'
 import { useSystemScheme } from '../../composables/useSystemScheme'
 
-const { me, busy, refresh, logout } = useMiniprogramSession()
+const { me, busy, errorMessage, canRetry, retryLabel, refresh, retry, logout } = useMiniprogramSession()
 const { scheme } = useSystemScheme({ bindPage: true })
 
 onShow(() => {
@@ -22,6 +22,10 @@ function goLogin() {
       v-if="scheme === 'light'"
       :me="me"
       :busy="busy"
+      :error-message="errorMessage"
+      :can-retry="canRetry"
+      :retry-label="retryLabel"
+      @retry="retry"
       @logout="logout"
       @login="goLogin"
     />
@@ -29,6 +33,10 @@ function goLogin() {
       v-else
       :me="me"
       :busy="busy"
+      :error-message="errorMessage"
+      :can-retry="canRetry"
+      :retry-label="retryLabel"
+      @retry="retry"
       @logout="logout"
       @login="goLogin"
     />

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getDatabaseUrl } from '../src/config.js';
 import { createDatabasePool } from '../src/db.js';
+import { testDatabaseUrl } from './test-database.js';
 
 const expectedTables = [
   'admin_credentials',
@@ -19,9 +19,9 @@ const expectedTables = [
 const forbiddenTables = ['users', 'vehicle_sheets', 'vehicle_sheet_items'];
 
 test('migrated database has identity tables and the auto-verify seed', async (t) => {
-  const databaseUrl = getDatabaseUrl();
+  const databaseUrl = testDatabaseUrl();
   if (!databaseUrl) {
-    t.skip('DATABASE_URL is not configured');
+    t.skip('TEST_DATABASE_URL is not configured; use npm run test:postgres');
     return;
   }
 

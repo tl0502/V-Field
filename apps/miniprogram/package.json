@@ -10,6 +10,7 @@
     "@dcloudio/uni-app": "3.0.0-4070620250821001",
     "@dcloudio/uni-components": "3.0.0-4070620250821001",
     "@dcloudio/uni-mp-weixin": "3.0.0-4070620250821001",
+    "@vquan/session-core": "*",
     "vue": "3.4.21"
   },
   "devDependencies": {
@@ -17,7 +18,8 @@
     "@dcloudio/uni-cli-shared": "3.0.0-4070620250821001",
     "@dcloudio/uni-stacktracey": "3.0.0-4070620250821001",
     "@dcloudio/vite-plugin-uni": "3.0.0-4070620250821001",
+    "miniprogram-api-typings": "5.2.3",
     "typescript": "^5.4.5",
-    "vite": "5.2.8"
+    "vite": "5.4.21"
   }
 }

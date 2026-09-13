@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
+import { parseDatabaseUrl } from './database-url.js';
 
 const envPath = fileURLToPath(new URL('../.env', import.meta.url));
 
@@ -74,11 +75,11 @@ export function describeDatabaseTarget(connectionString) {
     return { host: '', port: '', database: '', user: '' };
   }
 
-  const url = new URL(connectionString);
+  const config = parseDatabaseUrl(connectionString);
   return {
-    host: url.hostname,
-    port: url.port || '5432',
-    database: url.pathname.replace(/^\//, ''),
-    user: decodeURIComponent(url.username)
+    host: config.host,
+    port: String(config.port || 5432),
+    database: config.database,
+    user: config.user
   };
 }

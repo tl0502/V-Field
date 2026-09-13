@@ -17,6 +17,7 @@ export function createMemoryRepository() {
     },
 
     async createPlatformOperator({ accountId, loginName, passwordHash, now, source = 'bootstrap' }) {
+      if (operators.size > 0) return false;
       accounts.set(accountId, { id: accountId, status: 'active' });
       operators.set(accountId, { accountId, grantedAt: now, source });
       credentials.set(loginName, {
@@ -25,13 +26,19 @@ export function createMemoryRepository() {
         password_hash: passwordHash,
         status: 'active'
       });
+      return true;
     },
 
     async findAdminCredentialByLoginName(loginName) {
       return credentials.get(loginName) ?? null;
     },
 
-    async createSession({ id, accountId, audience, tokenHash, createdAt, expiresAt }) {
+    async rotateSession({ id, accountId, audience, tokenHash, createdAt, expiresAt }) {
+      for (const session of sessions.values()) {
+        if (session.account_id === accountId && session.audience === audience && !session.revoked_at) {
+          session.revoked_at = createdAt;
+        }
+      }
       sessions.set(tokenHash, {
         id,
         account_id: accountId,
@@ -53,14 +60,6 @@ export function createMemoryRepository() {
     async revokeSession(id, now) {
       for (const session of sessions.values()) {
         if (session.id === id && !session.revoked_at) {
-          session.revoked_at = now;
-        }
-      }
-    },
-
-    async revokeActiveSessions(accountId, audience, now) {
-      for (const session of sessions.values()) {
-        if (session.account_id === accountId && session.audience === audience && !session.revoked_at) {
           session.revoked_at = now;
         }
       }

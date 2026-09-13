@@ -86,6 +86,30 @@ test('bootstrap refuses to overwrite an existing platform operator', async () =>
   );
 });
 
+test('concurrent bootstrap admits only one initial operator', async () => {
+  const { auth, repository } = createAuth();
+  const results = await Promise.allSettled([
+    auth.bootstrapPlatformOperator({ loginName: 'first-one', password: 'correct-horse' }),
+    auth.bootstrapPlatformOperator({ loginName: 'first-two', password: 'correct-horse' })
+  ]);
+  assert.equal(results.filter((result) => result.status === 'fulfilled').length, 1);
+  assert.equal(await repository.countPlatformOperators(), 1);
+});
+
+test('login endpoints reject non-object JSON with a client error', async (t) => {
+  const { auth } = createAuth();
+  const base = await listen(t, auth);
+  for (const path of ['/api/auth/admin/login', '/api/auth/wechat/login']) {
+    for (const body of [null, [], 'text', 42, true]) {
+      const response = await fetch(`${base}${path}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body)
+      });
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { error: 'invalid_body' });
+    }
+  }
+});
+
 test('wrong admin password is rejected', async () => {
   const { auth } = createAuth();
   await auth.bootstrapPlatformOperator({

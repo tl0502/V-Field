@@ -3,9 +3,9 @@ name: p2-runtime-foundation
 language: zh-CN
 phase: build
 status: active
-state_version: 3
+state_version: 15
 brief: brief.md
-shape_confirmation_hash: dad4ee6559e668d9520732211751c2e5be96bf9444cb03dbf7d6ddf80bc398e5
+shape_confirmation_hash: d7c5d21fbe90a43a9e84fed6e1638dd97fde36ad5bf935412a42f53c5543e64a
 spec_changes:
   - capability: runtime-foundation
     operation: create
@@ -16,22 +16,29 @@ workspace:
   target_branch: main
   finish: null
 loop:
-  stage: building
-  goal_cycle: 1
-  iteration: 1
+  stage: repairing
+  goal_cycle: 3
+  iteration: 2
   attempt: 0
   retry_epoch: 0
   failed_iteration_count: 0
   no_progress_count: 0
   execution_failure_count: 0
-  previous_unresolved_ids: []
+  previous_unresolved_ids:
+    - A1
+    - A2
+    - A3
+    - A6
+    - A10
+    - A11
+    - A12
   next_action: submit-builder-candidate
 acceptance:
   - id: A1
     source: brief.md
     text: "A1: 仓库中存在正式工程
       `apps/miniprogram`、`apps/api`、`apps/admin-platform`、`apps/admin-domain`，能\
-      在清空后的数据库上本地启动；`experiments/p1-uniapp-probe/` 仍标明为实验，且不是该骨架的拷贝升级。"
+      在新空库 `vflie` 上本地启动；`experiments/p1-uniapp-probe/` 仍标明为实验，且不是该骨架的拷贝升级。"
     result: pending
     reason: null
   - id: A2
@@ -50,50 +57,62 @@ acceptance:
     source: brief.md
     text: "A4: 服务端为 Node.js + PostgreSQL；四套工程位于本仓库上述目录；连接串与密钥只出现在 gitignore
       的本地环境文件，不把旧项目 `.env` 提交进新仓库。"
-    result: pending
-    reason: null
+    result: passed
+    reason:
+      text: 四套工程位置及 Node.js/PostgreSQL 栈符合规格；本地 .env 被 Git 忽略，仅跟踪
+        .env.example；脱敏扫描未发现本地连接串或密钥进入候选文件。
+      truncated: false
   - id: A5
     source: brief.md
-    text: "A5: 正式小程序开启官方 Dark Mode（`darkmode` + `theme.json` + 页面/组件内
-      `prefers-color-scheme`），没有 JS 涂色作为主题机制。"
-    result: pending
-    reason: null
+    text: "A5: 正式小程序本轮锁浅色（`darkmode` 关闭，窗口/tabBar 使用浅色字面值）；`theme.json` 仍含 dark
+      token；深色 `prefers-color-scheme` 规则以注释保留、未被删除；没有 JS 涂色作为主题机制。"
+    result: passed
+    reason:
+      text: darkmode 为 false，窗口及 tabBar 使用浅色字面值；dark token 和九处已注释深色媒体查询保留，无 JS 涂色 API。
+      truncated: false
   - id: A6
     source: brief.md
-    text: "A6: 对旧项目 `DATABASE_URL` 指向的数据库执行一次清空后，该库不再保留旧表和旧行，只存在本 change
-      的新空表；旧项目工作区文件未被修改。"
+    text: "A6: 新版使用同机新空库 `vflie`，该库只有本 change 的新空表和预置汽车验证域种子；旧库 `vcar`
+      不被清空；旧项目工作区文件未被修改。"
     result: pending
     reason: null
   - id: A7
     source: brief.md
     text: "A7: 本轮交付止于骨架、空库与最小身份/鉴权；指定域运营者、入域审批、发布和阅读仍标明未交付。"
-    result: pending
-    reason: null
+    result: passed
+    reason:
+      text: README、API 元数据和页面明确将指定域运营者、入域审批、发布、阅读标为未交付。
+      truncated: false
   - id: A8
     source: specs/runtime-foundation/spec.md
     text: 四套正式工程可识别且探针仍是实验 - GIVEN 本 change 的实现已经落在新仓库。 - WHEN 查看仓库根与
       `apps/`、`experiments/`。 - THEN 能看到上述四套正式工程；`experiments/p1-uniapp-probe/`
       仍标明为实验；正式小程序不是该探针目录的重命名或原地升级。
-    result: pending
-    reason: null
+    result: passed
+    reason:
+      text: apps 下四套独立工程可识别；实验探针保留独立目录和实验声明，正式小程序使用独立身份页面。
+      truncated: false
   - id: A9
     source: specs/runtime-foundation/spec.md
     text: 栈与密钥隔离符合确认 - GIVEN 读者或检查核对本仓库的技术栈与环境文件。 - WHEN 对照已确认决定。 - THEN 四套工程位于本仓库
       `apps/` 下；API 为 Node.js 并使用 PostgreSQL；仓库中没有提交旧项目 `.env` 或明文密钥；S3
       没有被写成已交付。
-    result: pending
-    reason: null
+    result: passed
+    reason:
+      text: 工程目录、Vue 管理端、Node.js API 与 PostgreSQL 依赖符合确认；本地密钥未进入候选文件，未将 S3 写成已交付。
+      truncated: false
   - id: A10
     source: specs/runtime-foundation/spec.md
-    text: 一次清空后旧行消失且旧仓库文件未改 - GIVEN 实现使用旧项目 `DATABASE_URL` 指向的数据库，并且已经执行本 change
-      的一次清空与迁移。 - WHEN 核对该库的 `public` 表，并核对该旧项目工作区文件是否被修改。 - THEN 该库不再存在旧版
-      `users` / `vehicle_sheets` 等表及其行；只存在本规格的新表；旧项目源码与 `.env` 文件内容与清空前一致。
+    text: 新空库只有新表且旧库与旧仓库文件未改 - GIVEN 实现使用新库 `vflie`，并且已经在该库执行本 change 的迁移。 - WHEN 核对
+      `vflie` 的 `public` 表，核对比旧项目 `DATABASE_URL` 仍指向的 `vcar`，并核对该旧项目工作区文件是否被修改。
+      - THEN `vflie` 只存在本规格的新表和预置种子，没有作为本轮交付的旧 `vehicle_sheets` 表；`vcar` 仍存在、未被本
+      change 清空；旧项目源码与 `.env` 文件内容与改用 `vflie` 之前一致。
     result: pending
     reason: null
   - id: A11
     source: specs/runtime-foundation/spec.md
-    text: 新表覆盖身份与域实体且不含内容表 - GIVEN 清空后的迁移已经执行。 - WHEN 列出 `public` 用户表。 - THEN
-      能看到上表所列实体表，以及预置汽车验证域种子行；看不到作为本轮交付的内容发布表或旧 `vehicle_sheets` 表。
+    text: 新表覆盖身份与域实体且不含内容表 - GIVEN `vflie` 上的迁移已经执行。 - WHEN 列出该库 `public` 用户表。 -
+      THEN 能看到上表所列实体表，以及预置汽车验证域种子行；看不到作为本轮交付的内容发布表或旧 `vehicle_sheets` 表。
     result: pending
     reason: null
   - id: A12
@@ -106,31 +125,221 @@ acceptance:
     source: specs/runtime-foundation/spec.md
     text: 小程序微信登录产生平台账号 - GIVEN 微信登录配置可用，或测试中使用可注入的微信客户端替身。 - WHEN
       使用尚未绑定的微信身份调用小程序登录。 - THEN 创建平台账号和微信身份绑定，并返回小程序会话；该账号不会仅仅因为登录就成为域成员或域运营者。
-    result: pending
-    reason: null
+    result: passed
+    reason:
+      text: 规格允许注入微信客户端；现有回归验证新微信身份创建平台账号、绑定和小程序会话，不自动获得域成员或运营者资格。
+      truncated: false
   - id: A14
     source: specs/runtime-foundation/spec.md
     text: 开发令牌不能作为正式授权 - GIVEN API 已经按本规格运行。 - WHEN 只携带旧式开发令牌、不携带正式会话访问需要身份的接口。 -
       THEN 请求被拒绝；系统没有把开发令牌当作生产授权。
-    result: pending
-    reason: null
+    result: passed
+    reason:
+      text: HTTP 回归确认仅带 X-Dev-Token 读取身份返回 401；生产授权读取正式会话并校验账号状态。
+      truncated: false
   - id: A15
     source: specs/runtime-foundation/spec.md
-    text: 正式小程序使用官方 Dark Mode 链路 - GIVEN 正式小程序工程已经创建。 - WHEN 检查 `manifest` /
-      `theme.json` / 页面与组件样式，以及源码中的主题相关 API。 - THEN 官方 Dark Mode
-      已开启且窗口色来自主题变量；业务深色规则写在媒体查询里；没有 JS 涂色作为主题机制。
-    result: pending
-    reason: null
+    text: 正式小程序锁浅色且保留深色源 - GIVEN 正式小程序工程已经创建。 - WHEN 检查 `manifest` / `theme.json` /
+      页面与组件样式，以及源码中的主题相关 API。 - THEN `darkmode` 已关闭；窗口与 tabBar
+      为浅色字面值；`theme.json` 仍含 `dark` 段；深色媒体查询以注释保留且未被删除；没有 JS 涂色作为主题机制。
+    result: passed
+    reason:
+      text: 静态核对确认关闭 Dark Mode、使用浅色窗口/tabBar 值、保留 dark 段及注释媒体查询；主题监听不执行 JS 涂色。
+      truncated: false
   - id: A16
     source: specs/runtime-foundation/spec.md
     text: 本轮未把发布闭环写成已完成 - GIVEN 读者核对本轮交付说明和可运行界面。 - WHEN 寻找指定域运营者、入域审批、发布或阅读。 - THEN
       这些能力被标明未交付；本轮可验证的是骨架、空库和登录/身份。
-    result: pending
-    reason: null
-builder_handoff: null
+    result: passed
+    reason:
+      text: 管理页、小程序占位页、身份返回及交付说明一致标明后续业务未交付，没有将空表视为发布闭环完成。
+      truncated: false
+  - id: A17
+    source: specs/runtime-foundation/spec.md
+    text: 并发身份操作保持唯一性并能回滚 - GIVEN 隔离仓库中的首位运营者尚未创建，或同一账号同时发起两个同受众登录。 - WHEN
+      并发执行初始化或会话轮换，并模拟事务中途失败。 - THEN 最多一个首位初始化成功；轮换后最多一枚会话有效；失败写入回滚且不破坏原有效会话。
+    result: passed
+    reason:
+      text: 初始化使用事务级 advisory lock，会话轮换使用账号行锁；Runtime 临时 PostgreSQL
+        检查通过，覆盖并发唯一性、初始化失败回滚和轮换失败保留原会话。
+      truncated: false
+  - id: A18
+    source: specs/runtime-foundation/spec.md
+    text: 临时故障和迟到响应不会损坏当前会话 - GIVEN 用户已有会话，或登录的身份读取尚未结束。 - WHEN 刷新遇到网络或 5xx
+      故障、凭据被明确拒绝，或旧响应在状态变化后到达。 - THEN
+      临时故障保留可重试凭据并显示错误；明确失效清除身份；旧响应不能恢复失效身份或覆盖新会话；已离开登录页时不会被强制导航。
+    result: passed
+    reason:
+      text: 共享会话控制器保留网络及 5xx 故障凭据、清除明确失效身份，并通过版本和令牌快照拒绝旧响应；三端适配回归及微信登录页离开后禁止迟到导航回归通过。
+      truncated: false
+  - id: A19
+    source: specs/runtime-foundation/spec.md
+    text: 注销结果明确且可重试 - GIVEN 用户发起注销或重复点击注销。 - WHEN 注销失败后重试，或旧注销响应在新会话建立后到达。 - THEN
+      重复请求合并；失败有可见反馈和重试机会；成功或 401 后完成退出；迟到结果不清除新会话。
+    result: passed
+    reason:
+      text: 注销合并重复请求，失败保留凭据并提供可见重试入口，成功或明确失效后退出；快照校验及迟到注销回归确认不会清除替换后的令牌。
+      truncated: false
+  - id: A20
+    source: specs/runtime-foundation/spec.md
+    text: 数据库配置不会失真或泄漏凭据 - GIVEN 使用隔离的虚构数据库连接串和可注入的 SSL 探测。 - WHEN SSL 需要回退或连接串无法解析。
+      - THEN 实际驱动配置与选定模式一致，解析错误及日志不含密码；README 与新库边界一致。
+    result: passed
+    reason:
+      text: 连接串统一解析并移除二次解析入口，最终 SSL 配置传入驱动；故障回退及错误脱敏回归通过，README 常规初始化仅指导新库迁移和初始化。
+      truncated: false
+  - id: A21
+    source: specs/runtime-foundation/spec.md
+    text: 开发入口安全且工程检查通过 - GIVEN 正式工程依赖已安装。 - WHEN 运行三端构建、Vue/TypeScript 检查，并以不受信任的
+      Origin 请求开发服务器的非敏感样例。 - THEN 构建和类型检查通过；可运行的开发服务器不允许该 Origin
+      跨源读取；小程序没有开放不在范围内的 Web 开发服务。
+    result: passed
+    reason:
+      text: Runtime 三端构建和 Vue/TypeScript 检查通过；工具链回归实际验证两套后台拒绝不受信任 Origin 跨源读取及 API
+        工作区文件访问，小程序拒绝 HTTP serve 和非微信构建入口。
+      truncated: false
+  - id: A22
+    source: specs/runtime-foundation/spec.md
+    text: 登录接口拒绝非对象 JSON - GIVEN 请求体是合法 JSON，但顶层为 `null`、数组或原始值。 - WHEN 调用任一登录接口。 -
+      THEN 返回 400 参数错误，不触发 500 内部故障。
+    result: passed
+    reason:
+      text: 两个登录接口均在解析后要求顶层 JSON 对象；HTTP 回归覆盖 null、数组、字符串、数字和布尔值，均返回 400 invalid_body。
+      truncated: false
+builder_handoff:
+  candidate_id: a78d9873-83b3-4423-8f6a-761c0b12d20a
+  identity_provider: skill-coordinated
+  builder_execution_ref: skill-coordinated:builder:def6f02f-8ebf-493a-b396-a540c958a840
+  iteration: 1
+  summary:
+    text: 已修复审查清单13项：带锁原子初始化/会话轮换；共享会话状态与故障重试、注销互斥及迟到响应保护；微信登录页生命周期导航；SSL最终配置与URL错误脱敏；JSON顶层对象校验；README新库指引；后台Vite6.4.3与最小文件/CORS边界、小程序Vite5.4.21仅微信build/watch；Vue模板与TS检查。保留用户原有API地址、锁浅色和新库决定。
+    truncated: false
+  addressed_acceptance_ids:
+    - A17
+    - A18
+    - A19
+    - A20
+    - A21
+    - A22
+  checks:
+    - name:
+        text: npm test
+        truncated: false
+      result: passed
+      note:
+        text: API单元/HTTP18、前端22、工具链3通过；5项DB检查默认跳过并另在临时PostgreSQL运行。
+        truncated: false
+    - name:
+        text: npm run test:postgres
+        truncated: false
+      result: passed
+      note:
+        text: 一次性回环PostgreSQL17：23项全部通过，含真实并发/回滚/迁移；容器已删除。
+        truncated: false
+    - name:
+        text: npm run typecheck
+        truncated: false
+      result: passed
+      note:
+        text: 三端与两个共享包的Vue模板/TypeScript检查通过。
+        truncated: false
+    - name:
+        text: npm run build
+        truncated: false
+      result: passed
+      note:
+        text: 微信小程序与两套管理端生产构建通过。
+        truncated: false
+    - name:
+        text: WeChat watch smoke
+        truncated: false
+      result: passed
+      note:
+        text: 临时输出目录中watch首次构建完成并生成app.js；进程及临时目录已清理。
+        truncated: false
+    - name:
+        text: git diff --check
+        truncated: false
+      result: passed
+      note:
+        text: 仅Git已有换行提示，无差异格式错误。
+        truncated: false
+  checks_truncated: false
+  known_limits:
+    - text: 未连接现有vflie/vcar或操作旧工作区；临时PostgreSQL回归不能替代实际部署库及旧库状态验收。微信真机未测试。
+      truncated: false
+    - text: 小程序稳定uni工具链保留Vite5.4.21，已禁止HTTP serve/preview/H5；残余工具链审计告警已披露，未宣称audit清零。
+      truncated: false
+  known_limits_truncated: false
+  review:
+    status: passed
+    summary:
+      text: 新的独立只读复核通过；会话竞态与故障恢复、API事务及配置安全实现符合修复范围，独立执行40项回归全部通过，未发现必须修复问题。
+      truncated: false
+    reviewer_execution_ref: /root/fix_candidate_review
+  submitted_at: 2026-09-13T06:45:21.483Z
 blockers: []
 verification: null
-history: []
+history:
+  - goal_cycle: 1
+    iteration: 1
+    attempt: 1
+    outcome: fail
+    unresolved_ids:
+      - A5
+      - A6
+      - A10
+      - A15
+    summary:
+      text: 骨架、身份表、初始化与登录、密钥隔离和未交付标记可通过。A5/A15 因未开启官方 Dark Mode 未通过；A6/A10 因使用新库 vflie
+        而非清空旧库 vcar 未通过。后续用户决定未写入规格，本轮 Verify 失败，需回 Build 修订需求或改回规格行为。
+      truncated: false
+    completed_at: 2026-09-12T18:19:15.670Z
+  - goal_cycle: 1
+    iteration: 2
+    attempt: 0
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: Native confirmed acceptance criteria changed
+      truncated: false
+    completed_at: 2026-09-12T18:30:28.487Z
+  - goal_cycle: 2
+    iteration: 0
+    attempt: 0
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: Native confirmed acceptance criteria changed
+      truncated: false
+    completed_at: 2026-09-13T06:08:21.139Z
+  - goal_cycle: 3
+    iteration: 1
+    attempt: 1
+    outcome: blocked
+    unresolved_ids:
+      - A1
+      - A2
+      - A3
+      - A6
+      - A10
+      - A11
+      - A12
+    summary:
+      text: 本轮十三项代码修复对应 A17–A22 全部通过，未发现需要返修的必修问题。完整验收为 15 项 passed、7 项
+        blocked；阻塞集中在真实目标环境及初始化登录链路证据，不代表隔离回归失败。
+      truncated: false
+    completed_at: 2026-09-13T07:04:44.808Z
+  - goal_cycle: 3
+    iteration: 1
+    attempt: 1
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: 用户已将后端部署至微信云托管，并要求把云托管环境和服务信息接入小程序 callContainer；本轮调整现有小程序请求传输，保留已确认的微信
+        code 登录、会话与权限合同。
+      truncated: false
+    completed_at: 2026-09-13T07:25:25.773Z
 history_overflow:
   dropped_entries: 0
   first_dropped_at: null

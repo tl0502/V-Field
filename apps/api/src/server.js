@@ -53,13 +53,20 @@ async function readJsonBody(req) {
     return {};
   }
 
+  let body;
   try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   } catch {
     const error = new Error('invalid_json');
     error.code = 'invalid_json';
     throw error;
   }
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+    const error = new Error('invalid_body');
+    error.code = 'invalid_body';
+    throw error;
+  }
+  return body;
 }
 
 function firstHeader(req, name) {
@@ -140,8 +147,8 @@ export function createApp({ auth }) {
         json(res, error.statusCode, { error: error.code });
         return;
       }
-      if (error.code === 'invalid_json') {
-        json(res, 400, { error: 'invalid_json' });
+      if (error.code === 'invalid_json' || error.code === 'invalid_body') {
+        json(res, 400, { error: error.code });
         return;
       }
       if (error.code === 'request_body_too_large') {

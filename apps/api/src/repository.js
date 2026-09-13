@@ -9,6 +9,13 @@ export function createIdentityRepository(pool) {
 
     try {
       await client.query('BEGIN');
+      // Serialize the empty-table check across processes, including the first insert.
+      await client.query('SELECT pg_advisory_xact_lock($1)', [2_026_091_3]);
+      const existing = await client.query('SELECT 1 FROM platform_operator_grants LIMIT 1');
+      if (existing.rowCount > 0) {
+        await client.query('COMMIT');
+        return false;
+      }
       await client.query(
         `INSERT INTO platform_accounts (id, status, created_at, updated_at)
          VALUES ($1, 'active', $2, $2)`,
@@ -25,6 +32,7 @@ export function createIdentityRepository(pool) {
         [accountId, loginName, passwordHash, now]
       );
       await client.query('COMMIT');
+      return true;
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -44,12 +52,30 @@ export function createIdentityRepository(pool) {
     return result.rows[0] ?? null;
   }
 
-  async function createSession({ id, accountId, audience, tokenHash, createdAt, expiresAt }) {
-    await pool.query(
-      `INSERT INTO auth_sessions (id, account_id, audience, token_hash, created_at, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [id, accountId, audience, tokenHash, createdAt, expiresAt]
-    );
+  async function rotateSession({ id, accountId, audience, tokenHash, createdAt, expiresAt }) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      // Lock the account even when it has no sessions yet. A transaction alone
+      // cannot serialize two concurrent UPDATE-then-INSERT operations.
+      await client.query('SELECT id FROM platform_accounts WHERE id = $1 FOR UPDATE', [accountId]);
+      await client.query(
+        `UPDATE auth_sessions SET revoked_at = $3
+         WHERE account_id = $1 AND audience = $2 AND revoked_at IS NULL`,
+        [accountId, audience, createdAt]
+      );
+      await client.query(
+        `INSERT INTO auth_sessions (id, account_id, audience, token_hash, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [id, accountId, audience, tokenHash, createdAt, expiresAt]
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async function findSessionByTokenHash(tokenHash, now) {
@@ -70,15 +96,6 @@ export function createIdentityRepository(pool) {
     await pool.query(
       `UPDATE auth_sessions SET revoked_at = $2 WHERE id = $1 AND revoked_at IS NULL`,
       [id, now]
-    );
-  }
-
-  async function revokeActiveSessions(accountId, audience, now) {
-    await pool.query(
-      `UPDATE auth_sessions
-       SET revoked_at = $3
-       WHERE account_id = $1 AND audience = $2 AND revoked_at IS NULL`,
-      [accountId, audience, now]
     );
   }
 
@@ -166,10 +183,9 @@ export function createIdentityRepository(pool) {
     countPlatformOperators,
     createPlatformOperator,
     findAdminCredentialByLoginName,
-    createSession,
+    rotateSession,
     findSessionByTokenHash,
     revokeSession,
-    revokeActiveSessions,
     findWechatIdentity,
     createWechatAccount,
     touchWechatLogin,

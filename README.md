@@ -28,8 +28,21 @@
 
 本轮可验证：空库、首位平台运营者初始化、管理密码登录、小程序微信登录。指定域运营者、入域审批、发布和阅读尚未交付。
 
-密钥只放在被 gitignore 的 `apps/api/.env`。复制 `apps/api/.env.example` 填写。清空数据库需要 `ALLOW_DB_RESET=1`，然后 `npm run db:reset` 与 `npm run bootstrap`。
+密钥只放在被 gitignore 的 `apps/api/.env`。复制 `apps/api/.env.example`，把 `DATABASE_URL` 配置为新版空库 `vflie`，然后运行 `npm run db:migrate` 与 `npm run bootstrap`。初始化会拒绝重复创建首位平台运营者。
+
+`npm run db:reset` 会删除当前配置库的整个 `public` schema，仅供明确需要重建的隔离数据库使用，需要显式设置 `ALLOW_DB_RESET=1`。正常初始化不需要重置；本轮不得对旧库 `vcar` 执行该命令。
+
+## 开发检查
+
+- `npm test`：API 单元/HTTP、三端会话故障与竞态、开发服务器边界回归。默认不连接 `.env` 中的数据库。
+- `npm run test:postgres`：需要本机 Docker；自动启动只绑定回环地址的一次性 PostgreSQL 17 容器，检查真实事务、并发、回滚和迁移后删除该容器。测试数据不挂载到项目或已有数据库。
+- `npm run typecheck`：对小程序、后台和共享包执行 Vue/TypeScript 检查，包含 `.vue` 模板。
+- `npm run build`：构建微信小程序和两套后台。
+
+数据库集成测试只接受回环地址、库名以 `vquan_test_` 开头的 `TEST_DATABASE_URL`；不把业务 `DATABASE_URL` 当测试目标。
+
+后台使用 Vite 6.4.3，开发服务器关闭跨源读取，并只开放当前后台、共享包及依赖目录。稳定版 uni-app 仍要求 Vite 5，小程序使用兼容的 5.4.21，但配置只允许微信 `build` / watch，拒绝 serve、preview 和 H5。该依赖分支仍有 HTTP 开发服务器相关审计告警，不能把限制入口表述为整个依赖树审计清零。
 
 ## 工作区关系
 
-本目录 `D:\Project\WECHAT-PROJECT-next` 拥有独立 Git 仓库和 COMET 状态。旧项目 `D:\Project\WECHAT-PROJECT` 保留作参考；不修改其源码或 `.env`。P2 按用户确认复用旧项目正在使用的 PostgreSQL，并对其执行一次清空后写入新表。
+本目录 `D:\Project\WECHAT-PROJECT-next` 拥有独立 Git 仓库和 COMET 状态。旧项目 `D:\Project\WECHAT-PROJECT` 保留作参考；不修改其源码或 `.env`。P2 使用同机新空库 `vflie`，只写入新表及种子，不清空或改写旧库 `vcar`，不迁移旧账号和业务数据。

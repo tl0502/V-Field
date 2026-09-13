@@ -5,24 +5,32 @@ import { useAdminSession } from '../composables/useAdminSession'
 import { adminShellConfig } from '../shell'
 
 const router = useRouter()
-const { me, logout } = useAdminSession()
+const { me, busy, errorMessage, canRetry, retryLabel, retry, logout, isAuthed } = useAdminSession()
 const { identityTitle } = adminShellConfig()
 
 async function onLogout() {
-  await logout()
-  await router.replace({ name: 'login' })
+  if (await logout()) await router.replace({ name: 'login' })
+}
+
+async function onRetry() {
+  await retry()
+  if (!isAuthed.value && !canRetry.value) await router.replace({ name: 'login' })
 }
 </script>
 
 <template>
   <main v-if="me" class="page">
     <section class="card">
-      <IdentityPanel :title="identityTitle" :me="me" @logout="onLogout" />
+      <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
+      <button v-if="canRetry" :disabled="busy" @click="onRetry">{{ retryLabel }}</button>
+      <IdentityPanel :title="identityTitle" :me="me" :busy="busy" @logout="onLogout" />
     </section>
   </main>
 </template>
 
 <style scoped>
+.error { color: #d94b3d; }
+
 .page {
   min-height: 100vh;
   display: flex;

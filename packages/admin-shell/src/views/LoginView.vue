@@ -5,16 +5,19 @@ import { useAdminSession } from '../composables/useAdminSession'
 import { adminShellConfig } from '../shell'
 
 const router = useRouter()
-const { busy, errorMessage, login } = useAdminSession()
+const { busy, errorMessage, canRetry, retryLabel, login, retry } = useAdminSession()
 const { loginTitle, loginCopy } = adminShellConfig()
 
 async function onSubmit(payload: { loginName: string; password: string }) {
   try {
-    await login(payload.loginName, payload.password)
-    await router.replace({ name: 'identity' })
+    if (await login(payload.loginName, payload.password)) await router.replace({ name: 'identity' })
   } catch {
     // Error text is already on the form.
   }
+}
+
+async function onRetry() {
+  if (await retry()) await router.replace({ name: 'identity' })
 }
 </script>
 
@@ -24,6 +27,7 @@ async function onSubmit(payload: { loginName: string; password: string }) {
       <h1 class="title">{{ loginTitle }}</h1>
       <p class="copy">{{ loginCopy }}</p>
       <AdminLoginForm :busy="busy" :error-message="errorMessage" @submit="onSubmit" />
+      <button v-if="canRetry" :disabled="busy" @click="onRetry">{{ retryLabel }}</button>
     </section>
   </main>
 </template>

@@ -45,8 +45,7 @@ export function createAuthService({
   async function issueSession(accountId, audience) {
     const createdAt = now();
     const token = createSessionToken();
-    await repository.revokeActiveSessions(accountId, audience, createdAt);
-    await repository.createSession({
+    await repository.rotateSession({
       id: newId(),
       accountId,
       audience,
@@ -65,19 +64,17 @@ export function createAuthService({
       throw new AuthError('bootstrap_password_invalid');
     }
 
-    const existing = await repository.countPlatformOperators();
-    if (existing > 0) {
-      throw new AuthError('platform_operator_exists', 409);
-    }
-
     const accountId = newId();
-    await repository.createPlatformOperator({
+    const created = await repository.createPlatformOperator({
       accountId,
       loginName,
       passwordHash: await hashPassword(password),
       now: now(),
       source: 'bootstrap'
     });
+    if (!created) {
+      throw new AuthError('platform_operator_exists', 409);
+    }
 
     return { accountId, loginName };
   }

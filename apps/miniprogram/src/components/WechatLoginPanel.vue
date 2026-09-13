@@ -4,10 +4,13 @@ import { computed, shallowRef } from 'vue'
 const props = defineProps<{
   busy: boolean
   errorMessage: string
+  canRetry: boolean
+  retryLabel: string
 }>()
 
 const emit = defineEmits<{
   login: []
+  retry: []
 }>()
 
 const termsAccepted = shallowRef(false)
@@ -86,6 +89,7 @@ function submit() {
         {{ buttonLabel }}
       </button>
       <text v-if="errorMessage" class="auth-error">{{ errorMessage }}</text>
+      <button v-if="canRetry" :disabled="busy" @click="emit('retry')">{{ retryLabel }}</button>
     </view>
   </view>
 </template>

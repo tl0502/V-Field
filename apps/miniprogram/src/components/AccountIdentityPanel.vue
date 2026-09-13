@@ -5,11 +5,15 @@ import type { AccountMe } from '../types'
 const props = defineProps<{
   me: AccountMe | null
   busy: boolean
+  errorMessage: string
+  canRetry: boolean
+  retryLabel: string
 }>()
 
 const emit = defineEmits<{
   logout: []
   login: []
+  retry: []
 }>()
 
 const roleText = computed(() => {
@@ -28,6 +32,10 @@ const notDelivered = computed(() =>
 
 <template>
   <view class="identity-panel">
+    <view v-if="errorMessage" class="feedback">
+      <text>{{ errorMessage }}</text>
+      <button v-if="canRetry" :disabled="busy" @click="emit('retry')">{{ retryLabel }}</button>
+    </view>
     <view v-if="!me" class="empty-card">
       <text class="empty-title">尚未登录</text>
       <text class="empty-copy">请先完成微信登录。本轮只交付身份骨架，不交付发布或阅读。</text>
@@ -59,6 +67,15 @@ const notDelivered = computed(() =>
   border: 1rpx solid #ebebeb;
   border-radius: 14rpx;
   background-color: #ffffff;
+}
+
+.feedback {
+  margin-bottom: 24rpx;
+  padding: 24rpx;
+  border: 1rpx solid #d94b3d;
+  border-radius: 14rpx;
+  color: #d94b3d;
+  font-size: 26rpx;
 }
 
 .empty-title,

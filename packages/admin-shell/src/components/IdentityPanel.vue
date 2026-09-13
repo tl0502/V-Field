@@ -5,6 +5,7 @@ import type { AccountMe } from '../types'
 const props = defineProps<{
   title: string
   me: AccountMe
+  busy: boolean
 }>()
 
 const emit = defineEmits<{
@@ -39,7 +40,9 @@ const roleText = computed(() => {
         <dd>{{ me.notDelivered.join('、') }}</dd>
       </div>
     </dl>
-    <button class="logout" type="button" @click="emit('logout')">退出登录</button>
+    <button class="logout" type="button" :disabled="busy" @click="emit('logout')">
+      {{ busy ? '正在处理' : '退出登录' }}
+    </button>
   </section>
 </template>
 

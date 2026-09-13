@@ -1,5 +1,6 @@
 import vue from '@vitejs/plugin-vue'
-import { defineConfig, searchForWorkspaceRoot } from 'vite'
+import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [vue()],
@@ -12,11 +13,16 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5173,
+    strictPort: true,
+    cors: false,
     fs: {
-      allow: [searchForWorkspaceRoot(process.cwd())]
+      allow: ['.', '../../packages/admin-shell', '../../packages/session-core', '../../node_modules'].map(
+        (path) => fileURLToPath(new URL(path, import.meta.url))
+      )
     },
     proxy: {
       '/api': 'http://127.0.0.1:3064'
     }
-  }
+  },
+  preview: { host: '127.0.0.1', cors: false }
 })
