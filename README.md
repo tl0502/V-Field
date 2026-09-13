@@ -39,7 +39,7 @@
 - 环境 ID：`prod-d0g5k4jihd0ba8de4`（控制台的 `prod` 环境）。
 - 服务名：`vfield`（填写服务名，不填 `vfield-001` 等版本名）。
 
-`src/utils/requestApi.ts` 在首次请求前执行一次 `wx.cloud.init()`，为每次请求附上环境 ID、`X-WX-SERVICE`、会话和受众，并处理 HTTP 错误。登录、读取身份与退出仍调用 `/api/auth/wechat/login`、`/api/auth/me` 和 `/api/auth/logout`；控制台示例 `/api/count` 不是本项目的接口。`callContainer` 会在请求头注入 `X-WX-OPENID` / `X-WX-APPID`；后端优先用这些头建立小程序会话，避免再走 `jscode2session`。公网直连仍可用 `uni.login()` 的 code 换票。`WECHAT_APP_SECRET`、数据库连接串和管理密码只配置在后端。修改 API 后需要重新发布云托管服务 `vfield` 才会在小程序链路生效。
+`src/utils/requestApi.ts` 在首次请求前执行一次 `wx.cloud.init()`，为每次请求附上环境 ID、`X-WX-SERVICE`、会话和受众，并处理 HTTP 错误。登录、读取身份与退出仍调用 `/api/auth/wechat/login`、`/api/auth/me` 和 `/api/auth/logout`；控制台示例 `/api/count` 不是本项目的接口。`callContainer` 会在请求头注入 `X-WX-OPENID` / `X-WX-APPID`；后端优先用这些头建立小程序会话，避免再走 `jscode2session`。公网直连仍可用 `uni.login()` 的 code 换票。`WECHAT_APP_SECRET`、数据库连接串和管理密码只配置在后端。仓库根目录的 `Dockerfile` 只打包 API，容器监听 `0.0.0.0:80`，探活路径为 `/`、`/health` 或 `/api/health`。修改 API 后需要重新发布云托管服务 `vfield` 才会在小程序链路生效。
 
 此方式要求微信基础库至少 `2.23.0`，且小程序有权访问该云托管环境；正式发布前在小程序管理后台设置对应的最低基础库版本。通过 `callContainer` 发起的请求无需添加公网域名到 request 合法域名。参考 [微信官方调用说明](https://developers.weixin.qq.com/miniprogram/dev/wxcloudservice/wxcloudrun/src/development/call/mini.html)。
 

@@ -224,6 +224,12 @@ test('HTTP admin login, me, logout and dev token rejection', async (t) => {
   assert.equal(health.status, 200);
   assert.equal(health.body.ok, true);
 
+  for (const path of ['/', '/health', '/api/health']) {
+    const probe = await jsonRequest(base, path);
+    assert.equal(probe.status, 200);
+    assert.deepEqual(probe.body, { ok: true, service: 'vquan-next-api' });
+  }
+
   const meta = await jsonRequest(base, '/api/meta');
   assert.deepEqual(meta.body.notDelivered, [
     'assign-domain-operator',

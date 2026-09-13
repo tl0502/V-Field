@@ -109,7 +109,10 @@ export function createApp({ auth }) {
         return;
       }
 
-      if (req.method === 'GET' && pathname === '/api/health') {
+      if (
+        (req.method === 'GET' || req.method === 'HEAD') &&
+        (pathname === '/' || pathname === '/health' || pathname === '/api/health')
+      ) {
         json(res, 200, { ok: true, service: 'vquan-next-api' });
         return;
       }
