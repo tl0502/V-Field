@@ -62,16 +62,8 @@ function sessionCookieHeader(audience, token, maxAgeSeconds) {
   return parts.join('; ');
 }
 
-function expiredSessionCookieHeader(audience) {
-  const name = adminCookieName(audience);
-  if (!name) return '';
-  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
-}
-
 function applySessionCookie(res, audience, token, maxAgeSeconds) {
-  const header = token
-    ? sessionCookieHeader(audience, token, maxAgeSeconds)
-    : expiredSessionCookieHeader(audience);
+  const header = sessionCookieHeader(audience, token, maxAgeSeconds);
   if (!header) return;
   const existing = res.getHeader('set-cookie');
   res.setHeader('set-cookie', existing ? [].concat(existing, header) : header);
@@ -218,20 +210,13 @@ export function createApp({ auth }) {
 
       if (req.method === 'POST' && pathname === '/api/auth/logout') {
         const audience = requestAudience(req, url);
-        const result = await auth.logout(sessionToken(req, audience), audience);
-        if (adminCookieName(audience)) applySessionCookie(res, audience, '');
-        json(res, 200, result);
+        json(res, 200, await auth.logout(sessionToken(req, audience), audience));
         return;
       }
 
       json(res, 404, { error: 'not_found' });
     } catch (error) {
       if (error instanceof AuthError) {
-        if (error.statusCode === 401) {
-          const url = new URL(req.url ?? '/', 'http://127.0.0.1');
-          const audience = requestAudience(req, url);
-          if (adminCookieName(audience)) applySessionCookie(res, audience, '');
-        }
         json(res, error.statusCode, { error: error.code });
         return;
       }

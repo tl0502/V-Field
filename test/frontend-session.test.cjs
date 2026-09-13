@@ -183,6 +183,7 @@ for (const kind of ['mini', 'admin']) {
     assert.equal(credentialCleared(h), true);
     assert.equal(h.session.isAuthed.value, false);
     assert.equal(h.session.canRetry.value, false);
+    if (kind === 'admin') assert.match(h.session.errorMessage.value, /登录已失效/);
   });
 
   test(`${kind}: duplicate refreshes share one request`, async () => {
@@ -277,6 +278,16 @@ function navigationHarness() {
   lifecycle.onShow();
   return { ...h, lifecycle, completeLogin };
 }
+
+test('admin: a cookieless first refresh does not look like an expired session', async () => {
+  const h = harness('admin');
+  const pending = h.session.refresh();
+  h.reply(h.queue.shift(), { error: 'unauthorized' }, 401);
+  assert.equal(await pending, false);
+  assert.equal(h.session.isAuthed.value, false);
+  assert.equal(h.session.errorMessage.value, '');
+  assert.equal(h.session.canRetry.value, false);
+});
 
 test('leaving and revisiting the login page invalidates pending navigation', async () => {
   const h = navigationHarness();

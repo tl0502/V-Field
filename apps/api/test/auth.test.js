@@ -308,6 +308,97 @@ test('HTTP admin login, me, logout and dev token rejection', async (t) => {
   assert.equal(meAfterLogout.status, 401);
 });
 
+test('failed admin login does not expire an existing cookie', async (t) => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const base = await listen(t, auth);
+  const login = await jsonRequest(base, '/api/auth/admin/login', {
+    method: 'POST',
+    audience: 'admin-platform',
+    body: { loginName: 'platform-operator', password: 'correct-horse' }
+  });
+  const failed = await jsonRequest(base, '/api/auth/admin/login', {
+    method: 'POST',
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${login.body.token}`,
+    body: { loginName: 'platform-operator', password: 'wrong-password' }
+  });
+  assert.equal(failed.status, 401);
+  assert.equal(/Max-Age=0/i.test(failed.setCookie), false);
+  const me = await jsonRequest(base, '/api/auth/me', {
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${login.body.token}`
+  });
+  assert.equal(me.status, 200);
+});
+
+test('stale bearer 401 does not expire a valid admin cookie', async (t) => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const base = await listen(t, auth);
+  const first = await jsonRequest(base, '/api/auth/admin/login', {
+    method: 'POST',
+    audience: 'admin-platform',
+    body: { loginName: 'platform-operator', password: 'correct-horse' }
+  });
+  const second = await jsonRequest(base, '/api/auth/admin/login', {
+    method: 'POST',
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${first.body.token}`,
+    body: { loginName: 'platform-operator', password: 'correct-horse' }
+  });
+  const stale = await jsonRequest(base, '/api/auth/me', {
+    token: first.body.token,
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${second.body.token}`
+  });
+  assert.equal(stale.status, 401);
+  assert.equal(/Max-Age=0/i.test(stale.setCookie), false);
+  const me = await jsonRequest(base, '/api/auth/me', {
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${second.body.token}`
+  });
+  assert.equal(me.status, 200);
+});
+
+test('logout of an old admin token does not expire a newer cookie session', async (t) => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const base = await listen(t, auth);
+  const first = await jsonRequest(base, '/api/auth/admin/login', {
+    method: 'POST',
+    audience: 'admin-platform',
+    body: { loginName: 'platform-operator', password: 'correct-horse' }
+  });
+  const second = await jsonRequest(base, '/api/auth/admin/login', {
+    method: 'POST',
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${first.body.token}`,
+    body: { loginName: 'platform-operator', password: 'correct-horse' }
+  });
+  const logout = await jsonRequest(base, '/api/auth/logout', {
+    method: 'POST',
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${first.body.token}`
+  });
+  assert.equal(logout.status, 401);
+  assert.equal(/Max-Age=0/i.test(logout.setCookie), false);
+  const me = await jsonRequest(base, '/api/auth/me', {
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${second.body.token}`
+  });
+  assert.equal(me.status, 200);
+});
+
 test('miniprogram re-login revokes the previous session', async () => {
   const { auth } = createAuth();
   const first = await auth.wechatLogin({ code: 'same-user' });
@@ -334,14 +425,15 @@ test('admin keeps three sessions per audience and the fourth revokes the oldest'
       audience: 'admin-platform'
     }));
   }
-  await assert.rejects(
-    () => auth.readSession(tokens[0].token, 'admin-platform'),
-    (error) => error instanceof AuthError && error.code === 'unauthorized'
+  const results = await Promise.allSettled(
+    tokens.map((login) => auth.readSession(login.token, 'admin-platform'))
   );
-  for (const login of tokens.slice(1)) {
-    const current = await auth.readSession(login.token, 'admin-platform');
-    assert.equal(current.body.account.id, login.account.id);
-  }
+  assert.equal(results.filter((result) => result.status === 'fulfilled').length, 3);
+  assert.equal(results.filter((result) => result.status === 'rejected').length, 1);
+  assert.equal(
+    results.find((result) => result.status === 'rejected')?.reason.code,
+    'unauthorized'
+  );
 });
 
 test('platform and domain admin sessions do not revoke each other', async () => {

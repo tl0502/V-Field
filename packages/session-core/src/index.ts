@@ -87,9 +87,12 @@ export function createSessionController<TAccount extends object>(options: Sessio
       } catch (error) {
         if (!current(snapshot)) return false
         if (isInvalidSession(error)) {
+          const hadSession = Boolean(me.value)
           replaceToken('')
           if (cookieAuth) {
-            errorMessage.value = options.errorMessage(error, '登录已失效，请重新登录')
+            errorMessage.value = hadSession
+              ? options.errorMessage(error, '登录已失效，请重新登录')
+              : ''
             retryAction.value = null
             return false
           }
