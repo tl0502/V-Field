@@ -53,7 +53,7 @@ function harness(kind, extraMocks = {}) {
     const requireModule = (id) => {
       if (id in extraMocks) return extraMocks[id];
       if (id === 'vue') return vue;
-      if (id === '../shell') return { adminShellConfig: () => ({ storageKey: key }) };
+      if (id === '../shell') return { adminShellConfig: () => ({ audience: 'admin-platform' }) };
       if (id === '@vquan/session-core') return load('packages/session-core/src/index.ts');
       if (id.endsWith('.vue')) return {};
       return load(path.resolve(path.dirname(filename), `${id}.ts`));
@@ -88,8 +88,16 @@ function harness(kind, extraMocks = {}) {
     await tick(); reply(queue.shift());
     assert.equal(await pending, true);
   }
-  return { session, storage, queue, key, account, reply, fail, login, beginLogin, load, navigation, wx, cloudInitializations,
+  return { session, storage, queue, key, account, reply, fail, login, beginLogin, load, navigation, wx, cloudInitializations, kind,
     setPages(value) { pages = value; } };
+}
+
+function credentialHeld(h, token = 'current-token') {
+  return h.kind === 'admin' ? h.session.isAuthed.value : h.storage.get(h.key) === token;
+}
+
+function credentialCleared(h) {
+  return h.kind === 'admin' ? !h.session.isAuthed.value : !h.storage.has(h.key);
 }
 
 test('mini: CloudRun login, identity and logout preserve the API contract', async () => {
@@ -158,7 +166,7 @@ for (const kind of ['mini', 'admin']) {
       if (failure === 'network') h.fail(request);
       else h.reply(request, { error: 'internal_error' }, 500);
       assert.equal(await pending, false);
-      assert.equal(h.storage.get(h.key), 'current-token');
+      assert.equal(credentialHeld(h), true);
       assert.equal(h.session.isAuthed.value, true);
       assert.equal(h.session.canRetry.value, true);
       assert.match(h.session.errorMessage.value, /重试/);
@@ -172,7 +180,7 @@ for (const kind of ['mini', 'admin']) {
     const h = harness(kind); await h.login();
     const pending = h.session.refresh(); h.reply(h.queue.shift(), { error: 'unauthorized' }, 401);
     assert.equal(await pending, false);
-    assert.equal(h.storage.has(h.key), false);
+    assert.equal(credentialCleared(h), true);
     assert.equal(h.session.isAuthed.value, false);
     assert.equal(h.session.canRetry.value, false);
   });
@@ -192,7 +200,7 @@ for (const kind of ['mini', 'admin']) {
     h.reply(oldRequest, { error: 'unauthorized' }, 401); await oldRefresh;
     h.reply(h.queue.shift(), { ...h.account, token: 'new-token' }); await tick();
     h.reply(h.queue.shift()); assert.equal(await newLogin, true);
-    assert.equal(h.storage.get(h.key), 'new-token');
+    assert.equal(credentialHeld(h, 'new-token'), true);
     assert.equal(h.session.isAuthed.value, true);
   });
 
@@ -206,21 +214,25 @@ for (const kind of ['mini', 'admin']) {
     h.reply(h.queue.shift(), { error: 'unauthorized' }, 401);
     assert.equal(await login, false);
     assert.equal(h.session.isAuthed.value, false);
-    assert.equal(h.storage.has(h.key), false);
+    assert.equal(credentialCleared(h), true);
   });
 
   test(`${kind}: failed logout is visible and retries the same credential`, async () => {
     const h = harness(kind); await h.login();
     const logout = h.session.logout(); h.reply(h.queue.shift(), { error: 'internal_error' }, 500);
     assert.equal(await logout, false);
-    assert.equal(h.storage.get(h.key), 'current-token');
+    assert.equal(credentialHeld(h), true);
     assert.match(h.session.errorMessage.value, /退出登录未完成/);
     assert.equal(h.session.retryLabel.value, '重试退出');
     const retry = h.session.retry(), request = h.queue.shift();
     const headers = request.header ?? request.headers;
-    assert.equal(headers.Authorization ?? headers.authorization, 'Bearer current-token');
+    if (kind === 'mini') {
+      assert.equal(headers.Authorization ?? headers.authorization, 'Bearer current-token');
+    } else {
+      assert.equal(request.credentials, 'include');
+    }
     h.reply(request, { ok: true }); assert.equal(await retry, true);
-    assert.equal(h.storage.has(h.key), false);
+    assert.equal(credentialCleared(h), true);
     assert.equal(h.session.isAuthed.value, false);
   });
 
@@ -233,10 +245,11 @@ for (const kind of ['mini', 'admin']) {
     h.reply(h.queue.shift(), { ok: true });
     assert.deepEqual(await Promise.all([first, second]), [true, true]);
     await h.login('new-token');
-    assert.equal(h.storage.get(h.key), 'new-token');
+    assert.equal(credentialHeld(h, 'new-token'), true);
   });
 
   test(`${kind}: late logout never clears a replaced stored token`, async () => {
+    if (kind === 'admin') return;
     const h = harness(kind); await h.login();
     const logout = h.session.logout(), request = h.queue.shift();
     h.storage.set(h.key, 'replacement-token');
@@ -248,7 +261,7 @@ for (const kind of ['mini', 'admin']) {
     const h = harness(kind); await h.login();
     const logout = h.session.logout(); h.reply(h.queue.shift(), { error: 'unauthorized' }, 401);
     assert.equal(await logout, true);
-    assert.equal(h.storage.has(h.key), false);
+    assert.equal(credentialCleared(h), true);
   });
 }
 

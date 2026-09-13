@@ -87,6 +87,9 @@
 - 已确认（用户）：官方微信 Dark Mode 不可靠，本轮正式小程序锁浅色；深色源（`theme.json` dark token 与已注释媒体查询）保留，不得删除；不用 JS 涂色。
 - 已确认（用户，验收失败后）：把 A5/A15、A6/A10 改成上述锁浅色与 `vflie` 合同，而不是改回官方 Dark Mode 或清空 `vcar`。
 - 实现选择：管理网页与用户端一样用 Vue 3；API 用 Node.js ESM；新仓库用 npm workspaces；本地环境文件 gitignore；不提交旧密钥。
+- 已确认（用户）：管理端不用 `Secure` Cookie 来强制 HTTPS；反向代理终止 TLS 后，浏览器看到 HTTPS 时再加 `Secure` 即可，不要求 Node 自己提供 HTTPS。
+- 已确认（用户）：平台后台与域后台互不挤下线；平台最多 3 处同时在线，域最多 3 处；超出则挤掉该后台最旧的一处。小程序会话仍独立。
+- 已确认（用户）：同一浏览器同一后台的多个标签共用一份登录。管理端用 HttpOnly Cookie（`SameSite=Lax`，本地先不开 `Secure`），不再把令牌只放在 `sessionStorage`。
 
 # Open questions
 

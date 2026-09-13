@@ -46,7 +46,19 @@ export function createAuthService({
   now = () => new Date(),
   sessionTtlMs
 }) {
-  async function issueSession(accountId, audience) {
+  function sessionLimit(audience) {
+    return audience === 'admin-platform' || audience === 'admin-domain' ? 3 : 1;
+  }
+
+  function resolveAdminAudience(audience) {
+    if (!audience || audience === 'admin' || audience === 'admin-platform') {
+      return 'admin-platform';
+    }
+    if (audience === 'admin-domain') return 'admin-domain';
+    throw new AuthError('unauthorized', 401);
+  }
+
+  async function issueSession(accountId, audience, { revokeSessionId } = {}) {
     const createdAt = now();
     const token = createSessionToken();
     await repository.rotateSession({
@@ -55,7 +67,9 @@ export function createAuthService({
       audience,
       tokenHash: hashSessionToken(token),
       createdAt,
-      expiresAt: new Date(createdAt.getTime() + sessionTtlMs)
+      expiresAt: new Date(createdAt.getTime() + sessionTtlMs),
+      maxActive: sessionLimit(audience),
+      revokeSessionId
     });
     return token;
   }
@@ -83,11 +97,23 @@ export function createAuthService({
     return { accountId, loginName };
   }
 
-  async function adminLogin({ loginName, password }) {
+  async function lookupCurrentSession(token, audience) {
+    if (typeof token !== 'string' || !token) return null;
+    try {
+      const current = await readSession(token, audience);
+      return current.session;
+    } catch (error) {
+      if (error instanceof AuthError) return null;
+      throw error;
+    }
+  }
+
+  async function adminLogin({ loginName, password, audience, currentToken }) {
     if (typeof loginName !== 'string' || typeof password !== 'string') {
       throw new AuthError('invalid_credentials', 401);
     }
 
+    const adminAudience = resolveAdminAudience(audience);
     const credential = await repository.findAdminCredentialByLoginName(loginName.trim());
     if (!credential || credential.status !== 'active') {
       throw new AuthError('invalid_credentials', 401);
@@ -98,9 +124,12 @@ export function createAuthService({
       throw new AuthError('invalid_credentials', 401);
     }
 
-    const token = await issueSession(credential.account_id, 'admin');
+    const existing = await lookupCurrentSession(currentToken, adminAudience);
+    const token = await issueSession(credential.account_id, adminAudience, {
+      revokeSessionId: existing?.id
+    });
     const account = await repository.getAccountProjection(credential.account_id);
-    return { token, ...presentAccount(account, 'admin') };
+    return { token, ...presentAccount(account, adminAudience) };
   }
 
   async function wechatLogin({ code, openid, unionid, headerAppId } = {}) {
@@ -183,7 +212,12 @@ export function createAuthService({
       throw new AuthError('unauthorized', 401);
     }
     if (expectedAudience) {
-      if (expectedAudience !== 'admin' && expectedAudience !== 'miniprogram') {
+      if (
+        expectedAudience !== 'miniprogram' &&
+        expectedAudience !== 'admin' &&
+        expectedAudience !== 'admin-platform' &&
+        expectedAudience !== 'admin-domain'
+      ) {
         throw new AuthError('unauthorized', 401);
       }
       if (session.audience !== expectedAudience) {

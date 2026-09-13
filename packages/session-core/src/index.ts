@@ -17,6 +17,7 @@ interface SessionOptions {
   request: <T>(path: string, options?: SessionRequestOptions) => Promise<T>
   storage: { read: () => string; write: (token: string) => void }
   errorMessage: (error: unknown, fallback: string) => string
+  cookieAuth?: boolean
 }
 
 function isInvalidSession(error: unknown) {
@@ -25,6 +26,7 @@ function isInvalidSession(error: unknown) {
 }
 
 export function createSessionController<TAccount extends object>(options: SessionOptions) {
+  const cookieAuth = Boolean(options.cookieAuth)
   const me = shallowRef<TAccount | null>(null)
   const token = shallowRef('')
   const busy = shallowRef(false)
@@ -42,25 +44,26 @@ export function createSessionController<TAccount extends object>(options: Sessio
   }
 
   function replaceToken(value: string) {
-    options.storage.write(value)
-    token.value = value
+    if (!cookieAuth) options.storage.write(value)
+    token.value = cookieAuth ? '' : value
     me.value = null
     invalidateReads()
   }
 
   function current(snapshot: { token: string; revision: number }) {
+    if (cookieAuth) return revision === snapshot.revision
     return revision === snapshot.revision && token.value === snapshot.token &&
       options.storage.read() === snapshot.token
   }
 
   function loadIdentity(): Promise<boolean> {
-    const stored = options.storage.read()
-    if (stored !== token.value) {
+    const stored = cookieAuth ? '' : options.storage.read()
+    if (!cookieAuth && stored !== token.value) {
       token.value = stored
       me.value = null
       invalidateReads()
     }
-    if (!stored) return Promise.resolve(false)
+    if (!stored && !cookieAuth) return Promise.resolve(false)
     if (refreshFlight?.revision === revision) return refreshFlight.promise
 
     const snapshot = { token: stored, revision }
@@ -71,7 +74,10 @@ export function createSessionController<TAccount extends object>(options: Sessio
     }
     flight.promise = (async () => {
       try {
-        const account = await options.request<TAccount>('/api/auth/me', { token: stored })
+        const account = await options.request<TAccount>(
+          '/api/auth/me',
+          stored ? { token: stored } : {}
+        )
         if (!current(snapshot)) return false
         if (!account || typeof account !== 'object') throw new Error('invalid_response')
         me.value = account
@@ -80,7 +86,14 @@ export function createSessionController<TAccount extends object>(options: Sessio
         return true
       } catch (error) {
         if (!current(snapshot)) return false
-        if (isInvalidSession(error)) replaceToken('')
+        if (isInvalidSession(error)) {
+          replaceToken('')
+          if (cookieAuth) {
+            errorMessage.value = options.errorMessage(error, '登录已失效，请重新登录')
+            retryAction.value = null
+            return false
+          }
+        }
         errorMessage.value = options.errorMessage(error, '暂时无法读取登录状态，请重试')
         retryAction.value = 'refresh'
         return false
@@ -114,8 +127,13 @@ export function createSessionController<TAccount extends object>(options: Sessio
       if (run !== revision || options.storage.read() !== previousToken) return false
       const response = await options.request<{ token: string }>(path, { method: 'POST', body })
       if (run !== revision || options.storage.read() !== previousToken) return false
-      if (typeof response?.token !== 'string' || !response.token) throw new Error('login_failed')
-      replaceToken(response.token)
+      if (!cookieAuth) {
+        if (typeof response?.token !== 'string' || !response.token) throw new Error('login_failed')
+        replaceToken(response.token)
+      } else {
+        invalidateReads()
+        me.value = null
+      }
       return await loadIdentity()
     } catch (error) {
       if (run === revision) errorMessage.value = options.errorMessage(error, '登录失败，请重试')
@@ -128,14 +146,14 @@ export function createSessionController<TAccount extends object>(options: Sessio
   function logout(): Promise<boolean> {
     if (logoutFlight) return logoutFlight
     if (busy.value) return Promise.resolve(false)
-    const stored = options.storage.read()
-    if (stored !== token.value) {
+    const stored = cookieAuth ? '' : options.storage.read()
+    if (!cookieAuth && stored !== token.value) {
       token.value = stored
       me.value = null
     }
     invalidateReads()
     const snapshot = { token: stored, revision }
-    if (!stored) {
+    if (!stored && !cookieAuth) {
       replaceToken('')
       errorMessage.value = ''
       retryAction.value = null
@@ -148,7 +166,8 @@ export function createSessionController<TAccount extends object>(options: Sessio
       try {
         try {
           const result = await options.request<{ ok: boolean }>('/api/auth/logout', {
-            method: 'POST', token: stored
+            method: 'POST',
+            ...(stored ? { token: stored } : {})
           })
           if (result?.ok !== true) throw new Error('invalid_response')
         } catch (error) {
@@ -178,7 +197,11 @@ export function createSessionController<TAccount extends object>(options: Sessio
     busy: computed(() => busy.value || refreshing.value),
     errorMessage: shallowReadonly(errorMessage),
     isAuthed: computed(() => Boolean(me.value)),
-    canRetry: computed(() => Boolean(token.value) && retryAction.value !== null),
+    canRetry: computed(() => {
+      if (!retryAction.value) return false
+      if (cookieAuth) return retryAction.value === 'logout' ? Boolean(me.value) : true
+      return Boolean(token.value)
+    }),
     retryLabel: computed(() => retryAction.value === 'logout' ? '重试退出' : '重试读取'),
     retry: () => retryAction.value === 'logout' ? logout() : refresh(),
     refresh,

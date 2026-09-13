@@ -1,5 +1,5 @@
 export type AdminShellConfig = {
-  storageKey: string
+  audience: 'admin-platform' | 'admin-domain'
   loginTitle: string
   loginCopy: string
   identityTitle: string

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import test from 'node:test';
 import { AuthError, createAuthService } from '../src/auth.js';
 import { createApp } from '../src/server.js';
@@ -38,18 +39,40 @@ async function listen(t, auth) {
   return `http://127.0.0.1:${address.port}`;
 }
 
-async function jsonRequest(base, path, { method = 'GET', body, token, audience, headers = {} } = {}) {
-  const response = await fetch(`${base}${path}`, {
-    method,
-    headers: {
-      ...(body ? { 'content-type': 'application/json' } : {}),
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(audience ? { 'x-vquan-audience': audience } : {}),
-      ...headers
-    },
-    body: body ? JSON.stringify(body) : undefined
+async function jsonRequest(base, path, { method = 'GET', body, token, audience, headers = {}, cookies } = {}) {
+  const url = new URL(path, base);
+  const payload = body === undefined ? null : JSON.stringify(body);
+  const requestHeaders = {
+    ...(payload !== null ? {
+      'content-type': 'application/json',
+      'content-length': Buffer.byteLength(payload)
+    } : {}),
+    ...(token ? { authorization: `Bearer ${token}` } : {}),
+    ...(audience ? { 'x-vquan-audience': audience } : {}),
+    ...(cookies ? { cookie: cookies } : {}),
+    ...headers
+  };
+  const { status, raw, setCookie } = await new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: url.hostname,
+      port: url.port,
+      path: `${url.pathname}${url.search}`,
+      method,
+      headers: requestHeaders
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => resolve({
+        status: res.statusCode,
+        raw: Buffer.concat(chunks).toString('utf8'),
+        setCookie: [].concat(res.headers['set-cookie'] ?? []).join(', ')
+      }));
+    });
+    req.on('error', reject);
+    if (payload !== null) req.write(payload);
+    req.end();
   });
-  return { status: response.status, body: await response.json() };
+  return { status, body: JSON.parse(raw), setCookie };
 }
 
 test('bootstrap then admin login identifies platform operator', async () => {
@@ -65,7 +88,7 @@ test('bootstrap then admin login identifies platform operator', async () => {
   });
 
   assert.equal(result.roles.platformOperator, true);
-  assert.equal(result.audience, 'admin');
+  assert.equal(result.audience, 'admin-platform');
   assert.equal(result.loginName, 'platform-operator');
   assert.ok(result.token);
 });
@@ -240,14 +263,27 @@ test('HTTP admin login, me, logout and dev token rejection', async (t) => {
 
   const login = await jsonRequest(base, '/api/auth/admin/login', {
     method: 'POST',
+    audience: 'admin-platform',
     body: { loginName: 'platform-operator', password: 'correct-horse' }
   });
   assert.equal(login.status, 200);
   assert.equal(login.body.roles.platformOperator, true);
+  assert.equal(login.body.audience, 'admin-platform');
+  assert.match(login.setCookie, /vquan_admin_platform=/);
+  assert.match(login.setCookie, /HttpOnly/i);
+  assert.match(login.setCookie, /SameSite=Lax/i);
+  assert.equal(/Secure/i.test(login.setCookie), false);
+
+  const cookieMe = await jsonRequest(base, '/api/auth/me', {
+    audience: 'admin-platform',
+    cookies: `vquan_admin_platform=${login.body.token}`
+  });
+  assert.equal(cookieMe.status, 200);
+  assert.equal(cookieMe.body.roles.platformOperator, true);
 
   const me = await jsonRequest(base, '/api/auth/me', {
     token: login.body.token,
-    audience: 'admin'
+    audience: 'admin-platform'
   });
   assert.equal(me.status, 200);
   assert.equal(me.body.roles.platformOperator, true);
@@ -261,40 +297,101 @@ test('HTTP admin login, me, logout and dev token rejection', async (t) => {
   const logout = await jsonRequest(base, '/api/auth/logout', {
     method: 'POST',
     token: login.body.token,
-    audience: 'admin'
+    audience: 'admin-platform'
   });
   assert.equal(logout.status, 200);
 
   const meAfterLogout = await jsonRequest(base, '/api/auth/me', {
     token: login.body.token,
-    audience: 'admin'
+    audience: 'admin-platform'
   });
   assert.equal(meAfterLogout.status, 401);
 });
 
-test('re-login revokes the previous session for the same audience', async () => {
+test('miniprogram re-login revokes the previous session', async () => {
+  const { auth } = createAuth();
+  const first = await auth.wechatLogin({ code: 'same-user' });
+  const second = await auth.wechatLogin({ code: 'same-user' });
+  await assert.rejects(
+    () => auth.readSession(first.token, 'miniprogram'),
+    (error) => error instanceof AuthError && error.code === 'unauthorized'
+  );
+  const current = await auth.readSession(second.token, 'miniprogram');
+  assert.equal(current.body.account.id, second.account.id);
+});
+
+test('admin keeps three sessions per audience and the fourth revokes the oldest', async () => {
   const { auth } = createAuth();
   await auth.bootstrapPlatformOperator({
     loginName: 'platform-operator',
     password: 'correct-horse'
   });
-
-  const first = await auth.adminLogin({
-    loginName: 'platform-operator',
-    password: 'correct-horse'
-  });
-  const second = await auth.adminLogin({
-    loginName: 'platform-operator',
-    password: 'correct-horse'
-  });
-
+  const tokens = [];
+  for (let index = 0; index < 4; index += 1) {
+    tokens.push(await auth.adminLogin({
+      loginName: 'platform-operator',
+      password: 'correct-horse',
+      audience: 'admin-platform'
+    }));
+  }
   await assert.rejects(
-    () => auth.readSession(first.token, 'admin'),
+    () => auth.readSession(tokens[0].token, 'admin-platform'),
     (error) => error instanceof AuthError && error.code === 'unauthorized'
   );
+  for (const login of tokens.slice(1)) {
+    const current = await auth.readSession(login.token, 'admin-platform');
+    assert.equal(current.body.account.id, login.account.id);
+  }
+});
 
-  const current = await auth.readSession(second.token, 'admin');
-  assert.equal(current.body.account.id, second.account.id);
+test('platform and domain admin sessions do not revoke each other', async () => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const platform = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse',
+    audience: 'admin-platform'
+  });
+  const domain = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse',
+    audience: 'admin-domain'
+  });
+  assert.equal((await auth.readSession(platform.token, 'admin-platform')).body.audience, 'admin-platform');
+  assert.equal((await auth.readSession(domain.token, 'admin-domain')).body.audience, 'admin-domain');
+});
+
+test('same browser admin re-login replaces the current cookie session only', async () => {
+  const { auth } = createAuth();
+  await auth.bootstrapPlatformOperator({
+    loginName: 'platform-operator',
+    password: 'correct-horse'
+  });
+  const first = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse',
+    audience: 'admin-platform'
+  });
+  const other = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse',
+    audience: 'admin-platform'
+  });
+  const replaced = await auth.adminLogin({
+    loginName: 'platform-operator',
+    password: 'correct-horse',
+    audience: 'admin-platform',
+    currentToken: first.token
+  });
+  await assert.rejects(
+    () => auth.readSession(first.token, 'admin-platform'),
+    (error) => error instanceof AuthError && error.code === 'unauthorized'
+  );
+  assert.equal((await auth.readSession(other.token, 'admin-platform')).body.account.id, other.account.id);
+  assert.equal((await auth.readSession(replaced.token, 'admin-platform')).body.account.id, replaced.account.id);
 });
 
 test('miniprogram token cannot be used as an admin session', async (t) => {
@@ -304,7 +401,7 @@ test('miniprogram token cannot be used as an admin session', async (t) => {
 
   const asAdmin = await jsonRequest(base, '/api/auth/me', {
     token: wechat.token,
-    audience: 'admin'
+    audience: 'admin-platform'
   });
   assert.equal(asAdmin.status, 401);
   assert.equal(asAdmin.body.error, 'unauthorized');
@@ -331,7 +428,7 @@ test('auth me and logout require a matching audience header', async (t) => {
 
   const missing = await jsonRequest(base, '/api/auth/me', { token: login.token });
   assert.equal(missing.status, 200);
-  assert.equal(missing.body.audience, 'admin');
+  assert.equal(missing.body.audience, 'admin-platform');
 
   const wrong = await jsonRequest(base, '/api/auth/me', {
     token: login.token,
@@ -352,14 +449,14 @@ test('auth me accepts audience query and x-vquan-session fallbacks', async (t) =
   });
   const base = await listen(t, auth);
 
-  const viaQuery = await jsonRequest(base, '/api/auth/me?audience=admin', {
+  const viaQuery = await jsonRequest(base, '/api/auth/me?audience=admin-platform', {
     token: login.token
   });
   assert.equal(viaQuery.status, 200);
   assert.equal(viaQuery.body.roles.platformOperator, true);
 
   const viaSessionHeader = await jsonRequest(base, '/api/auth/me', {
-    audience: 'admin',
+    audience: 'admin-platform',
     headers: { 'x-vquan-session': login.token }
   });
   assert.equal(viaSessionHeader.status, 200);

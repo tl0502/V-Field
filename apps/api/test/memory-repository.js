@@ -33,11 +33,35 @@ export function createMemoryRepository() {
       return credentials.get(loginName) ?? null;
     },
 
-    async rotateSession({ id, accountId, audience, tokenHash, createdAt, expiresAt }) {
-      for (const session of sessions.values()) {
-        if (session.account_id === accountId && session.audience === audience && !session.revoked_at) {
-          session.revoked_at = createdAt;
+    async rotateSession({
+      id, accountId, audience, tokenHash, createdAt, expiresAt, maxActive = 1, revokeSessionId
+    }) {
+      if (revokeSessionId) {
+        for (const session of sessions.values()) {
+          if (
+            session.id === revokeSessionId &&
+            session.account_id === accountId &&
+            session.audience === audience &&
+            !session.revoked_at
+          ) {
+            session.revoked_at = createdAt;
+          }
         }
+      }
+      const active = [...sessions.values()]
+        .filter((session) => (
+          session.account_id === accountId &&
+          session.audience === audience &&
+          !session.revoked_at
+        ))
+        .sort((left, right) => {
+          const byTime = left.createdAt - right.createdAt;
+          return byTime !== 0 ? byTime : String(left.id).localeCompare(String(right.id));
+        });
+      const limit = Number.isInteger(maxActive) && maxActive > 0 ? maxActive : 1;
+      const revokeCount = limit === 1 ? active.length : Math.max(0, active.length + 1 - limit);
+      for (const session of active.slice(0, revokeCount)) {
+        session.revoked_at = createdAt;
       }
       sessions.set(tokenHash, {
         id,

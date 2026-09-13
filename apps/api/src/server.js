@@ -16,6 +16,10 @@ import { createIdentityRepository } from './repository.js';
 import { createWechatClient } from './wechat-client.js';
 
 const maximumBodyBytes = 64 * 1024;
+const adminCookieNames = {
+  'admin-platform': 'vquan_admin_platform',
+  'admin-domain': 'vquan_admin_domain'
+};
 
 function applyApiHeaders(res) {
   res.setHeader('access-control-allow-origin', '*');
@@ -24,6 +28,53 @@ function applyApiHeaders(res) {
     'access-control-allow-headers',
     'content-type, authorization, x-vquan-audience, x-vquan-session'
   );
+}
+
+function parseCookies(header) {
+  const cookies = {};
+  if (!header) return cookies;
+  for (const part of header.split(';')) {
+    const separator = part.indexOf('=');
+    if (separator < 0) continue;
+    const name = part.slice(0, separator).trim();
+    const value = part.slice(separator + 1).trim();
+    if (!name) continue;
+    try {
+      cookies[name] = decodeURIComponent(value);
+    } catch {
+      cookies[name] = value;
+    }
+  }
+  return cookies;
+}
+
+function adminCookieName(audience) {
+  return adminCookieNames[audience] ?? '';
+}
+
+function sessionCookieHeader(audience, token, maxAgeSeconds) {
+  const name = adminCookieName(audience);
+  if (!name) return '';
+  const parts = [`${name}=${encodeURIComponent(token)}`, 'Path=/', 'HttpOnly', 'SameSite=Lax'];
+  if (Number.isInteger(maxAgeSeconds) && maxAgeSeconds > 0) {
+    parts.push(`Max-Age=${maxAgeSeconds}`);
+  }
+  return parts.join('; ');
+}
+
+function expiredSessionCookieHeader(audience) {
+  const name = adminCookieName(audience);
+  if (!name) return '';
+  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+}
+
+function applySessionCookie(res, audience, token, maxAgeSeconds) {
+  const header = token
+    ? sessionCookieHeader(audience, token, maxAgeSeconds)
+    : expiredSessionCookieHeader(audience);
+  if (!header) return;
+  const existing = res.getHeader('set-cookie');
+  res.setHeader('set-cookie', existing ? [].concat(existing, header) : header);
 }
 
 function json(res, statusCode, body) {
@@ -74,11 +125,15 @@ function firstHeader(req, name) {
   return typeof header === 'string' ? header.trim() : '';
 }
 
-function sessionToken(req) {
+function sessionToken(req, audience) {
   const authorization = firstHeader(req, 'authorization');
   const match = authorization ? authorization.match(/^Bearer\s+([^\s]+)$/i) : null;
   if (match) return match[1];
-  return firstHeader(req, 'x-vquan-session');
+  const headerToken = firstHeader(req, 'x-vquan-session');
+  if (headerToken) return headerToken;
+  const name = adminCookieName(audience);
+  if (!name) return '';
+  return parseCookies(firstHeader(req, 'cookie'))[name] ?? '';
 }
 
 function requestAudience(req, url) {
@@ -128,10 +183,20 @@ export function createApp({ auth }) {
 
       if (req.method === 'POST' && pathname === '/api/auth/admin/login') {
         const body = await readJsonBody(req);
-        json(res, 200, await auth.adminLogin({
+        const audience = requestAudience(req, url);
+        const result = await auth.adminLogin({
           loginName: body.loginName,
-          password: body.password
-        }));
+          password: body.password,
+          audience,
+          currentToken: sessionToken(req, audience === 'admin-domain' ? 'admin-domain' : 'admin-platform')
+        });
+        applySessionCookie(
+          res,
+          result.audience,
+          result.token,
+          Math.floor(getSessionTtlMs() / 1000)
+        );
+        json(res, 200, result);
         return;
       }
 
@@ -145,19 +210,28 @@ export function createApp({ auth }) {
       }
 
       if (req.method === 'GET' && pathname === '/api/auth/me') {
-        const { body } = await auth.readSession(sessionToken(req), requestAudience(req, url));
+        const audience = requestAudience(req, url);
+        const { body } = await auth.readSession(sessionToken(req, audience), audience);
         json(res, 200, body);
         return;
       }
 
       if (req.method === 'POST' && pathname === '/api/auth/logout') {
-        json(res, 200, await auth.logout(sessionToken(req), requestAudience(req, url)));
+        const audience = requestAudience(req, url);
+        const result = await auth.logout(sessionToken(req, audience), audience);
+        if (adminCookieName(audience)) applySessionCookie(res, audience, '');
+        json(res, 200, result);
         return;
       }
 
       json(res, 404, { error: 'not_found' });
     } catch (error) {
       if (error instanceof AuthError) {
+        if (error.statusCode === 401) {
+          const url = new URL(req.url ?? '/', 'http://127.0.0.1');
+          const audience = requestAudience(req, url);
+          if (adminCookieName(audience)) applySessionCookie(res, audience, '');
+        }
         json(res, error.statusCode, { error: error.code });
         return;
       }

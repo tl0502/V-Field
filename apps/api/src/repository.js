@@ -52,18 +52,44 @@ export function createIdentityRepository(pool) {
     return result.rows[0] ?? null;
   }
 
-  async function rotateSession({ id, accountId, audience, tokenHash, createdAt, expiresAt }) {
+  async function rotateSession({
+    id, accountId, audience, tokenHash, createdAt, expiresAt, maxActive = 1, revokeSessionId
+  }) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       // Lock the account even when it has no sessions yet. A transaction alone
       // cannot serialize two concurrent UPDATE-then-INSERT operations.
       await client.query('SELECT id FROM platform_accounts WHERE id = $1 FOR UPDATE', [accountId]);
-      await client.query(
-        `UPDATE auth_sessions SET revoked_at = $3
-         WHERE account_id = $1 AND audience = $2 AND revoked_at IS NULL`,
-        [accountId, audience, createdAt]
-      );
+      if (revokeSessionId) {
+        await client.query(
+          `UPDATE auth_sessions SET revoked_at = $2
+           WHERE id = $1 AND account_id = $3 AND audience = $4 AND revoked_at IS NULL`,
+          [revokeSessionId, createdAt, accountId, audience]
+        );
+      }
+      const limit = Number.isInteger(maxActive) && maxActive > 0 ? maxActive : 1;
+      if (limit === 1) {
+        await client.query(
+          `UPDATE auth_sessions SET revoked_at = $3
+           WHERE account_id = $1 AND audience = $2 AND revoked_at IS NULL`,
+          [accountId, audience, createdAt]
+        );
+      } else {
+        const active = await client.query(
+          `SELECT id FROM auth_sessions
+           WHERE account_id = $1 AND audience = $2 AND revoked_at IS NULL
+           ORDER BY created_at ASC, id ASC`,
+          [accountId, audience]
+        );
+        const overflow = active.rows.length + 1 - limit;
+        if (overflow > 0) {
+          await client.query(
+            `UPDATE auth_sessions SET revoked_at = $2 WHERE id = ANY($1::uuid[])`,
+            [active.rows.slice(0, overflow).map((row) => row.id), createdAt]
+          );
+        }
+      }
       await client.query(
         `INSERT INTO auth_sessions (id, account_id, audience, token_hash, created_at, expires_at)
          VALUES ($1, $2, $3, $4, $5, $6)`,

@@ -6,12 +6,13 @@ import { adminShellConfig } from '../shell'
 import type { AccountMe } from '../types'
 
 async function request<T>(path: string, options: SessionRequestOptions = {}): Promise<T> {
-  const headers: Record<string, string> = { 'x-vquan-audience': 'admin' }
+  const headers: Record<string, string> = { 'x-vquan-audience': adminShellConfig().audience }
   if (options.body !== undefined) headers['content-type'] = 'application/json'
   if (options.token) headers.authorization = `Bearer ${options.token}`
   const response = await fetch(path, {
     method: options.method ?? 'GET',
     headers,
+    credentials: 'include',
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined
   })
   let data: T & { error?: string }
@@ -29,13 +30,10 @@ async function request<T>(path: string, options: SessionRequestOptions = {}): Pr
 const session = createSessionController<AccountMe>({
   request,
   errorMessage: authErrorMessage,
+  cookieAuth: true,
   storage: {
-    read: () => sessionStorage.getItem(adminShellConfig().storageKey) ?? '',
-    write(value) {
-      const key = adminShellConfig().storageKey
-      if (value) sessionStorage.setItem(key, value)
-      else sessionStorage.removeItem(key)
-    }
+    read: () => '',
+    write() {}
   }
 })
 

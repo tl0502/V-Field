@@ -8,7 +8,7 @@ export interface AccountMe {
     domainOperatorDomainIds: string[]
     memberDomainIds: string[]
   }
-  audience: 'miniprogram' | 'admin'
+  audience: 'miniprogram' | 'admin' | 'admin-platform' | 'admin-domain'
   loginName: string | null
   notDelivered: string[]
 }
