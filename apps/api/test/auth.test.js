@@ -23,7 +23,7 @@ function createAuth(overrides = {}) {
     auth: createAuthService({
       repository,
       wechatClient,
-      appId,
+      appId: overrides.appId ?? appId,
       sessionTtlMs,
       now: () => new Date('2026-09-12T00:00:00.000Z')
     })
@@ -148,6 +148,68 @@ test('wechat login is rejected when config is missing', async () => {
     () => auth.wechatLogin({ code: 'any' }),
     (error) => error instanceof AuthError && error.code === 'wechat_config_missing'
   );
+});
+
+test('wechat login prefers callContainer openid and skips code exchange', async () => {
+  let exchanged = 0;
+  const { auth } = createAuth({
+    wechatClient: {
+      async code2Session() {
+        exchanged += 1;
+        throw new Error('code2Session should not run');
+      }
+    }
+  });
+
+  const result = await auth.wechatLogin({
+    code: 'should-be-ignored',
+    openid: 'cloud-openid',
+    unionid: 'cloud-unionid',
+    headerAppId: appId
+  });
+
+  assert.equal(exchanged, 0);
+  assert.ok(result.token);
+  assert.equal(result.audience, 'miniprogram');
+  assert.equal(result.roles.platformOperator, false);
+});
+
+test('wechat login rejects a callContainer identity for a different app id', async () => {
+  const { auth } = createAuth();
+  await assert.rejects(
+    () => auth.wechatLogin({
+      openid: 'cloud-openid',
+      headerAppId: 'wx-other-app'
+    }),
+    (error) => error instanceof AuthError && error.code === 'wechat_login_failed'
+  );
+});
+
+test('HTTP wechat login accepts WeChat CloudRun identity headers', async (t) => {
+  let exchanged = 0;
+  const { auth } = createAuth({
+    wechatClient: {
+      async code2Session(code) {
+        exchanged += 1;
+        return { openid: `openid-${code}`, unionid: null };
+      }
+    }
+  });
+  const base = await listen(t, auth);
+  const response = await jsonRequest(base, '/api/auth/wechat/login', {
+    method: 'POST',
+    body: { code: 'unused-code' },
+    headers: {
+      'x-wx-openid': 'header-openid',
+      'x-wx-appid': appId,
+      'x-wx-unionid': 'header-unionid'
+    }
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(exchanged, 0);
+  assert.ok(response.body.token);
+  assert.equal(response.body.audience, 'miniprogram');
 });
 
 test('HTTP admin login, me, logout and dev token rejection', async (t) => {

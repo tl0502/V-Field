@@ -13,6 +13,7 @@ function harness(kind, extraMocks = {}) {
   const storage = new Map();
   const queue = [];
   const navigation = [];
+  const cloudInitializations = [];
   const key = kind === 'mini' ? 'vquan.session' : 'review-admin';
   const cache = new Map();
   let pages = [{ route: 'pages/me/me' }, { route: 'pages/auth/auth' }];
@@ -21,12 +22,18 @@ function harness(kind, extraMocks = {}) {
     setStorageSync: (name, value) => storage.set(name, value),
     removeStorageSync: (name) => storage.delete(name),
     login: async () => ({ code: 'review-code' }),
-    request: (request) => queue.push(request),
+    request: () => { throw new Error('Mini program API requests must use callContainer'); },
     navigateBack: () => navigation.push('back'),
     switchTab: ({ url }) => navigation.push(url)
   };
+  const wx = {
+    cloud: {
+      init: (...args) => cloudInitializations.push(args),
+      callContainer: (request) => new Promise((resolve, reject) => queue.push({ ...request, resolve, reject }))
+    }
+  };
   const context = vm.createContext({
-    Error, console, uni,
+    Error, console, uni, wx,
     getCurrentPages: () => pages,
     sessionStorage: {
       getItem: (name) => storage.get(name) ?? null,
@@ -65,11 +72,11 @@ function harness(kind, extraMocks = {}) {
   };
   function reply(request, data = account, status = 200) {
     assert.ok(request, 'Expected an outgoing request');
-    if (kind === 'mini') request.success({ statusCode: status, data });
+    if (kind === 'mini') request.resolve({ statusCode: status, data: typeof data === 'string' ? data : JSON.stringify(data) });
     else request.resolve({ ok: status < 400, status, json: async () => data });
   }
   function fail(request) {
-    if (kind === 'mini') request.fail({ errMsg: 'request:fail timeout' });
+    if (kind === 'mini') request.reject({ errMsg: 'cloud.callContainer:fail timeout' });
     else request.reject(new Error('network failure'));
   }
   function beginLogin() {
@@ -81,9 +88,65 @@ function harness(kind, extraMocks = {}) {
     await tick(); reply(queue.shift());
     assert.equal(await pending, true);
   }
-  return { session, storage, queue, key, account, reply, fail, login, beginLogin, load, navigation,
+  return { session, storage, queue, key, account, reply, fail, login, beginLogin, load, navigation, wx, cloudInitializations,
     setPages(value) { pages = value; } };
 }
+
+test('mini: CloudRun login, identity and logout preserve the API contract', async () => {
+  const h = harness('mini');
+  const { cloudRunEnv, cloudRunService } = h.load('apps/miniprogram/src/utils/config.ts');
+  const login = h.beginLogin();
+  await tick();
+  const request = h.queue.shift();
+  assert.equal(request.config.env, cloudRunEnv);
+  assert.equal(request.header['X-WX-SERVICE'], cloudRunService);
+  assert.equal(request.header['content-type'], 'application/json');
+  assert.equal(request.path, '/api/auth/wechat/login?audience=miniprogram');
+  assert.equal(request.method, 'POST');
+  assert.equal(request.data.code, 'review-code');
+  assert.equal(request.dataType, 'text');
+  assert.ok(request.timeout > 0 && request.timeout <= 15000);
+  h.reply(request, { ...h.account, token: 'cloud-token' });
+  await tick();
+  const identity = h.queue.shift();
+  assert.equal(identity.path, '/api/auth/me?audience=miniprogram');
+  assert.equal(identity.method, 'GET');
+  assert.equal(identity.header.Authorization, 'Bearer cloud-token');
+  assert.equal(identity.header['x-vquan-session'], 'cloud-token');
+  assert.equal(identity.header['x-vquan-audience'], 'miniprogram');
+  h.reply(identity);
+  assert.equal(await login, true);
+  const logout = h.session.logout();
+  const outgoing = h.queue.shift();
+  assert.equal(outgoing.path, '/api/auth/logout?audience=miniprogram');
+  assert.equal(outgoing.method, 'POST');
+  assert.equal(outgoing.header['X-WX-SERVICE'], cloudRunService);
+  h.reply(outgoing, { ok: true });
+  assert.equal(await logout, true);
+  assert.equal(h.cloudInitializations.length, 1);
+});
+
+test('mini: an unavailable cloud SDK reports a useful error without a public HTTP fallback', async () => {
+  const h = harness('mini');
+  h.wx.cloud = undefined;
+  assert.equal(await h.beginLogin(), false);
+  assert.match(h.session.errorMessage.value, /更新微信/);
+  assert.equal(h.queue.length, 0);
+  assert.equal(h.cloudInitializations.length, 0);
+});
+
+test('mini: a malformed cloud response preserves the current session for retry', async () => {
+  const h = harness('mini');
+  await h.login();
+  const pending = h.session.refresh();
+  h.reply(h.queue.shift(), '<html>upstream unavailable</html>', 502);
+  assert.equal(await pending, false);
+  assert.equal(h.storage.get(h.key), 'current-token');
+  assert.equal(h.session.canRetry.value, true);
+  const retry = h.session.retry();
+  h.reply(h.queue.shift());
+  assert.equal(await retry, true);
+});
 
 for (const kind of ['mini', 'admin']) {
   for (const failure of ['network', '500']) {

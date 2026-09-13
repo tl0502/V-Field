@@ -18,6 +18,10 @@ export class AuthError extends Error {
   }
 }
 
+function trimValue(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 function presentAccount(account, audience) {
   return {
     account: {
@@ -99,33 +103,53 @@ export function createAuthService({
     return { token, ...presentAccount(account, 'admin') };
   }
 
-  async function wechatLogin({ code }) {
-    if (typeof code !== 'string' || !code.trim()) {
-      throw new AuthError('wechat_code_required');
-    }
-    if (!appId) {
+  async function wechatLogin({ code, openid, unionid, headerAppId } = {}) {
+    const identityAppId = trimValue(appId) || trimValue(headerAppId);
+    if (!identityAppId) {
       throw new AuthError('wechat_config_missing', 503);
     }
 
+    const cloudOpenId = trimValue(openid);
     let identity;
-    try {
-      identity = await wechatClient.code2Session(code.trim());
-    } catch (error) {
-      if (error instanceof WechatApiError && error.wechatCode === 'config_missing') {
+    if (cloudOpenId) {
+      const incomingAppId = trimValue(headerAppId);
+      if (trimValue(appId) && incomingAppId && incomingAppId !== identityAppId) {
+        throw new AuthError('wechat_login_failed', 502);
+      }
+      identity = {
+        openid: cloudOpenId,
+        unionid: trimValue(unionid) || null
+      };
+    } else {
+      if (typeof code !== 'string' || !code.trim()) {
+        throw new AuthError('wechat_code_required');
+      }
+      if (!trimValue(appId)) {
         throw new AuthError('wechat_config_missing', 503);
       }
-      throw new AuthError('wechat_login_failed', 502);
+      try {
+        identity = await wechatClient.code2Session(code.trim());
+      } catch (error) {
+        if (error instanceof WechatApiError && error.wechatCode === 'config_missing') {
+          throw new AuthError('wechat_config_missing', 503);
+        }
+        console.error(
+          'wechat login exchange failed',
+          error instanceof WechatApiError ? error.wechatCode : error
+        );
+        throw new AuthError('wechat_login_failed', 502);
+      }
     }
 
     const current = now();
-    let bound = await repository.findWechatIdentity(appId, identity.openid);
+    let bound = await repository.findWechatIdentity(identityAppId, identity.openid);
     if (!bound) {
       const accountId = newId();
       try {
         await repository.createWechatAccount({
           accountId,
           identityId: newId(),
-          appId,
+          appId: identityAppId,
           openid: identity.openid,
           unionid: identity.unionid,
           now: current
@@ -135,7 +159,7 @@ export function createAuthService({
           throw error;
         }
       }
-      bound = await repository.findWechatIdentity(appId, identity.openid);
+      bound = await repository.findWechatIdentity(identityAppId, identity.openid);
     } else {
       await repository.touchWechatLogin(bound.id, current, identity.unionid);
     }

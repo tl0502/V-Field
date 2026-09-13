@@ -87,6 +87,14 @@ function requestAudience(req, url) {
   return (url.searchParams.get('audience') ?? '').trim();
 }
 
+function cloudRunWechatIdentity(req) {
+  return {
+    openid: firstHeader(req, 'x-wx-openid') || firstHeader(req, 'x-wx-from-openid'),
+    unionid: firstHeader(req, 'x-wx-unionid') || firstHeader(req, 'x-wx-from-unionid'),
+    headerAppId: firstHeader(req, 'x-wx-appid') || firstHeader(req, 'x-wx-from-appid')
+  };
+}
+
 export function createApp({ auth }) {
   return createServer(async (req, res) => {
     applyApiHeaders(res);
@@ -126,7 +134,10 @@ export function createApp({ auth }) {
 
       if (req.method === 'POST' && pathname === '/api/auth/wechat/login') {
         const body = await readJsonBody(req);
-        json(res, 200, await auth.wechatLogin({ code: body.code }));
+        json(res, 200, await auth.wechatLogin({
+          code: body.code,
+          ...cloudRunWechatIdentity(req)
+        }));
         return;
       }
 

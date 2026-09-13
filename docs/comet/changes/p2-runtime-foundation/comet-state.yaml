@@ -3,7 +3,7 @@ name: p2-runtime-foundation
 language: zh-CN
 phase: build
 status: active
-state_version: 15
+state_version: 19
 brief: brief.md
 shape_confirmation_hash: d7c5d21fbe90a43a9e84fed6e1638dd97fde36ad5bf935412a42f53c5543e64a
 spec_changes:
@@ -18,7 +18,7 @@ workspace:
 loop:
   stage: repairing
   goal_cycle: 3
-  iteration: 2
+  iteration: 3
   attempt: 0
   retry_epoch: 0
   failed_iteration_count: 0
@@ -127,7 +127,8 @@ acceptance:
       使用尚未绑定的微信身份调用小程序登录。 - THEN 创建平台账号和微信身份绑定，并返回小程序会话；该账号不会仅仅因为登录就成为域成员或域运营者。
     result: passed
     reason:
-      text: 规格允许注入微信客户端；现有回归验证新微信身份创建平台账号、绑定和小程序会话，不自动获得域成员或运营者资格。
+      text: 规格允许可注入微信客户端替身。Runtime 的 API 回归验证新微信身份创建平台账号且不自动授予域角色；源码建立身份绑定并签发
+        miniprogram 会话，云传输回归保留 code 登录及原有接口合同。
       truncated: false
   - id: A14
     source: specs/runtime-foundation/spec.md
@@ -170,7 +171,8 @@ acceptance:
       临时故障保留可重试凭据并显示错误；明确失效清除身份；旧响应不能恢复失效身份或覆盖新会话；已离开登录页时不会被强制导航。
     result: passed
     reason:
-      text: 共享会话控制器保留网络及 5xx 故障凭据、清除明确失效身份，并通过版本和令牌快照拒绝旧响应；三端适配回归及微信登录页离开后禁止迟到导航回归通过。
+      text: 共享会话控制器保留临时故障凭据，通过版本及存储快照拒绝旧响应；小程序登录页校验活动状态和请求轮次。Runtime
+        的网络、5xx、401、畸形响应、竞态和离页导航回归均通过。
       truncated: false
   - id: A19
     source: specs/runtime-foundation/spec.md
@@ -178,7 +180,7 @@ acceptance:
       重复请求合并；失败有可见反馈和重试机会；成功或 401 后完成退出；迟到结果不清除新会话。
     result: passed
     reason:
-      text: 注销合并重复请求，失败保留凭据并提供可见重试入口，成功或明确失效后退出；快照校验及迟到注销回归确认不会清除替换后的令牌。
+      text: 注销合并重复请求，失败保留凭据并显示重试入口，成功或401完成退出；快照检查阻止迟到结果清除替换会话。对应小程序和管理端回归全部通过。
       truncated: false
   - id: A20
     source: specs/runtime-foundation/spec.md
@@ -195,8 +197,8 @@ acceptance:
       跨源读取；小程序没有开放不在范围内的 Web 开发服务。
     result: passed
     reason:
-      text: Runtime 三端构建和 Vue/TypeScript 检查通过；工具链回归实际验证两套后台拒绝不受信任 Origin 跨源读取及 API
-        工作区文件访问，小程序拒绝 HTTP serve 和非微信构建入口。
+      text: Runtime 三端构建和五个工程的 Vue/TypeScript 检查通过；tooling
+        三项回归实际验证两套后台拒绝跨源读取及越界文件访问、小程序拒绝 HTTP 服务和非微信构建入口。
       truncated: false
   - id: A22
     source: specs/runtime-foundation/spec.md
@@ -207,77 +209,79 @@ acceptance:
       text: 两个登录接口均在解析后要求顶层 JSON 对象；HTTP 回归覆盖 null、数组、字符串、数字和布尔值，均返回 400 invalid_body。
       truncated: false
 builder_handoff:
-  candidate_id: a78d9873-83b3-4423-8f6a-761c0b12d20a
+  candidate_id: 67970b08-81d0-4ebe-aac0-b0399cebf972
   identity_provider: skill-coordinated
-  builder_execution_ref: skill-coordinated:builder:def6f02f-8ebf-493a-b396-a540c958a840
-  iteration: 1
+  builder_execution_ref: skill-coordinated:builder:f30cb63d-d5fe-4430-aa48-f0bb8ce936e6
+  iteration: 2
   summary:
-    text: 已修复审查清单13项：带锁原子初始化/会话轮换；共享会话状态与故障重试、注销互斥及迟到响应保护；微信登录页生命周期导航；SSL最终配置与URL错误脱敏；JSON顶层对象校验；README新库指引；后台Vite6.4.3与最小文件/CORS边界、小程序Vite5.4.21仅微信build/watch；Vue模板与TS检查。保留用户原有API地址、锁浅色和新库决定。
+    text: 小程序请求从公网 uni.request 切换到统一 requestApi 封装的 wx.cloud.callContainer；控制台核实环境
+      prod-d0g5k4jihd0ba8de4、服务 vfield。首次请求前初始化云能力，保留 code 登录、三个 auth
+      路由、受众、Bearer 与备用会话头、HTTP 状态和会话故障恢复。补充原生能力不可用提示、CloudRun 合同/畸形响应回归和 README
+      接入说明。使用模块内最小类型边界，未关闭严格类型检查。
     truncated: false
   addressed_acceptance_ids:
-    - A17
+    - A13
     - A18
     - A19
-    - A20
     - A21
-    - A22
   checks:
     - name:
-        text: npm test
+        text: npm run test:frontend
         truncated: false
       result: passed
       note:
-        text: API单元/HTTP18、前端22、工具链3通过；5项DB检查默认跳过并另在临时PostgreSQL运行。
-        truncated: false
-    - name:
-        text: npm run test:postgres
-        truncated: false
-      result: passed
-      note:
-        text: 一次性回环PostgreSQL17：23项全部通过，含真实并发/回滚/迁移；容器已删除。
+        text: 25 项通过；小程序替身使用 callContainer Promise，模拟原始 JSON 文本、网络/5xx/401、迟到响应和注销重试。
         truncated: false
     - name:
         text: npm run typecheck
         truncated: false
       result: passed
       note:
-        text: 三端与两个共享包的Vue模板/TypeScript检查通过。
+        text: 三端与两个共享包检查通过；移除与 uni-app 全局声明冲突的临时类型依赖，未加入 skipLibCheck。
         truncated: false
     - name:
-        text: npm run build
+        text: npm run build:mp-weixin -w @vquan/miniprogram
         truncated: false
       result: passed
       note:
-        text: 微信小程序与两套管理端生产构建通过。
+        text: 最终源码构建成功，生成 apps/miniprogram/dist/build/mp-weixin。
         truncated: false
     - name:
-        text: WeChat watch smoke
+        text: WeChat simulator callContainer health
         truncated: false
       result: passed
       note:
-        text: 临时输出目录中watch首次构建完成并生成app.js；进程及临时目录已清理。
+        text: 已连接且已登录的微信开发者工具，项目 AppID wx881064c3dbe54a18；原生 callContainer 指向真实
+          env/service，GET /api/health 返回 200 与
+          {ok:true,service:vquan-next-api}。此证据是 SDK 实际请求，自动化沙箱不能直接 require
+          编译模块，不据此声称已完成手机登录。
         truncated: false
     - name:
         text: git diff --check
         truncated: false
       result: passed
       note:
-        text: 仅Git已有换行提示，无差异格式错误。
+        text: 无 whitespace 错误。
         truncated: false
   checks_truncated: false
   known_limits:
-    - text: 未连接现有vflie/vcar或操作旧工作区；临时PostgreSQL回归不能替代实际部署库及旧库状态验收。微信真机未测试。
+    - text: 本轮未连接或改写 vflie/vcar、初始化运营者或验证管理密码登录。原来 A1/A2/A3/A6/A10/A11/A12
+        的真实环境证据缺口保持，不能用健康接口替代。
       truncated: false
-    - text: 小程序稳定uni工具链保留Vite5.4.21，已禁止HTTP serve/preview/H5；残余工具链审计告警已披露，未宣称audit清零。
+    - text: 未在手机验证完整登录/退出；未上传或发布小程序。此次调整的是本地小程序调用方式。
+      truncated: false
+    - text: 用户操作期间仓库新增提交 a8639f7（先前修复），当前差异内 miniprogram-api-typings
+        的删除是撤销本轮临时添加的冲突类型包。
       truncated: false
   known_limits_truncated: false
   review:
     status: passed
     summary:
-      text: 新的独立只读复核通过；会话竞态与故障恢复、API事务及配置安全实现符合修复范围，独立执行40项回归全部通过，未发现必须修复问题。
+      text: 新的只读复核未发现必要问题；核对 auth 路由、受众/令牌、错误恢复、SDK 初始化、uni-app 原生 wx
+        别名与模块内类型声明；README 与回归覆盖一致。
       truncated: false
-    reviewer_execution_ref: /root/fix_candidate_review
-  submitted_at: 2026-09-13T06:45:21.483Z
+    reviewer_execution_ref: subagent:/root/review_cloud_transport
+  submitted_at: 2026-09-13T07:44:03.255Z
 blockers: []
 verification: null
 history:
@@ -340,6 +344,33 @@ history:
         code 登录、会话与权限合同。
       truncated: false
     completed_at: 2026-09-13T07:25:25.773Z
+  - goal_cycle: 3
+    iteration: 2
+    attempt: 1
+    outcome: blocked
+    unresolved_ids:
+      - A1
+      - A2
+      - A3
+      - A6
+      - A10
+      - A11
+      - A12
+    summary:
+      text: 本次范围4项通过、7项因真实环境证据缺失而阻塞，无代码失败项。已独立核对规格、源码、构建产物及五项 Runtime 原始日志，最后核对
+        Builder handoff；未重复检查或操作真实环境。
+      truncated: false
+    completed_at: 2026-09-13T07:56:46.792Z
+  - goal_cycle: 3
+    iteration: 2
+    attempt: 1
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: 用户在只读排查后明确要求开始修复并进入流程。保留已确认的 P2 身份骨架和原生导航需求；修复开发者工具与真机均出现的 requestApi
+        模块加载失败、页面未注册及底栏图标不可见，核对生成产物与微信实际编译包。现有真实环境验收缺口继续如实保留。
+      truncated: false
+    completed_at: 2026-09-13T08:31:52.454Z
 history_overflow:
   dropped_entries: 0
   first_dropped_at: null
