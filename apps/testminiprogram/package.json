@@ -1,0 +1,11 @@
+{
+  "name": "@vquan/testminiprogram",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "build": "node ../../scripts/build-test-miniprogram.mjs"
+  },
+  "dependencies": {
+    "@vquan/session-core": "*"
+  }
+}

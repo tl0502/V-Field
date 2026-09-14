@@ -8,12 +8,17 @@ import {
   getPort,
   getSessionTtlMs,
   getWechatAppId,
-  getWechatAppSecret
+  getWechatAppSecret,
+  trustsCloudRunIdentity
 } from './config.js';
 import { createDatabasePool } from './db.js';
 import { runMigrations } from './migrate.js';
 import { createIdentityRepository } from './repository.js';
 import { createWechatClient } from './wechat-client.js';
+import { createCommunityRepository } from './community-repository.js';
+import { createCommunityRoutes } from './community-routes.js';
+import { CommunityError } from './community-errors.js';
+import { ContentValidationError } from '../../../packages/content-core/src/index.js';
 
 const maximumBodyBytes = 64 * 1024;
 const adminCookieNames = {
@@ -22,6 +27,7 @@ const adminCookieNames = {
 };
 
 function applyApiHeaders(res) {
+  res.setHeader('cache-control', 'no-store');
   res.setHeader('access-control-allow-origin', '*');
   res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
   res.setHeader(
@@ -78,18 +84,19 @@ function json(res, statusCode, body) {
   res.end(payload);
 }
 
-async function readJsonBody(req) {
+async function readJsonBody(req, maximumBytes = maximumBodyBytes) {
   const chunks = [];
   let size = 0;
 
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > maximumBodyBytes) {
-      const error = new Error('request_body_too_large');
-      error.code = 'request_body_too_large';
-      throw error;
-    }
-    chunks.push(chunk);
+    if (size <= maximumBytes) chunks.push(chunk);
+  }
+
+  if (size > maximumBytes) {
+    const error = new Error('request_body_too_large');
+    error.code = 'request_body_too_large';
+    throw error;
   }
 
   if (chunks.length === 0) {
@@ -142,7 +149,8 @@ function cloudRunWechatIdentity(req) {
   };
 }
 
-export function createApp({ auth }) {
+export function createApp({ auth, community, trustCloudRunIdentity = false }) {
+  const communityRoute = createCommunityRoutes({ auth, community, readBody: readJsonBody, sessionToken, json });
   return createServer(async (req, res) => {
     applyApiHeaders(res);
 
@@ -166,9 +174,9 @@ export function createApp({ auth }) {
 
       if (req.method === 'GET' && pathname === '/api/meta') {
         json(res, 200, {
-          stage: 'p2-runtime-foundation',
-          delivered: ['skeleton', 'empty-database', 'min-identity'],
-          notDelivered: ['assign-domain-operator', 'join-approval', 'publish', 'read']
+          stage: community ? 'p3-first-user-loop' : 'p2-runtime-foundation',
+          delivered: ['skeleton', 'empty-database', 'min-identity', ...(community ? ['public-user-id', 'user-lookup', 'assign-domain-operator', 'join-approval', 'domain-types', 'domain-tags', 'publish', 'read', 'author-delete'] : [])],
+          notDelivered: community ? ['profile-edit', 'media-upload', 'comments', 'messages', 'follow', 'content-search'] : ['assign-domain-operator', 'join-approval', 'publish', 'read']
         });
         return;
       }
@@ -196,7 +204,7 @@ export function createApp({ auth }) {
         const body = await readJsonBody(req);
         json(res, 200, await auth.wechatLogin({
           code: body.code,
-          ...cloudRunWechatIdentity(req)
+          ...(trustCloudRunIdentity ? cloudRunWechatIdentity(req) : {})
         }));
         return;
       }
@@ -214,10 +222,19 @@ export function createApp({ auth }) {
         return;
       }
 
+      if (await communityRoute(req, res, url)) return;
       json(res, 404, { error: 'not_found' });
     } catch (error) {
       if (error instanceof AuthError) {
         json(res, error.statusCode, { error: error.code });
+        return;
+      }
+      if (error instanceof CommunityError || error instanceof ContentValidationError) {
+        json(res, error.statusCode ?? 400, { error: error.code, ...(error.issues?.length ? { issues: error.issues } : {}) });
+        return;
+      }
+      if (error.code === 'user_id_allocation_unavailable') {
+        json(res, 503, { error: error.code });
         return;
       }
       if (error.code === 'invalid_json' || error.code === 'invalid_body') {
@@ -248,7 +265,7 @@ export async function startServer(port = getPort(), host = getHost()) {
     sessionTtlMs: getSessionTtlMs()
   });
 
-  const server = createApp({ auth });
+  const server = createApp({ auth, community: createCommunityRepository(pool), trustCloudRunIdentity: trustsCloudRunIdentity() });
 
   await new Promise((resolveListen, rejectListen) => {
     server.once('error', rejectListen);

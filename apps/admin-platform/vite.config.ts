@@ -16,7 +16,7 @@ export default defineConfig({
     strictPort: true,
     cors: false,
     fs: {
-      allow: ['.', '../../packages/admin-shell', '../../packages/session-core', '../../node_modules'].map(
+      allow: ['.', '../../packages/admin-shell', '../../packages/session-core', '../../packages/content-core', '../../node_modules'].map(
         (path) => fileURLToPath(new URL(path, import.meta.url))
       )
     },

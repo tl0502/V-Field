@@ -4,6 +4,7 @@
   "workspaces": [
     "apps/api",
     "apps/miniprogram",
+    "apps/testminiprogram",
     "apps/admin-platform",
     "apps/admin-domain",
     "packages/*"
@@ -13,16 +14,18 @@
     "dev:admin-platform": "npm run dev -w @vquan/admin-platform",
     "dev:admin-domain": "npm run dev -w @vquan/admin-domain",
     "dev:miniprogram": "npm run dev:mp-weixin -w @vquan/miniprogram",
+    "build:testminiprogram": "npm run build -w @vquan/testminiprogram",
+    "check:miniprogram-builds": "node scripts/check-miniprogram-builds.mjs",
     "db:reset": "npm run db:reset -w @vquan/api",
     "db:migrate": "npm run db:migrate -w @vquan/api",
     "bootstrap": "npm run bootstrap -w @vquan/api",
     "test:api": "npm test -w @vquan/api",
-    "test:frontend": "node --test test/frontend-session.test.cjs",
+    "test:frontend": "node --test test/frontend-session.test.cjs test/publish-draft.test.mjs test/editor-interaction.test.mjs test/date-time.test.mjs",
     "test:tooling": "node --test test/tooling.test.mjs",
     "test:postgres": "node scripts/test-postgres.mjs",
     "test": "npm run test:api && npm run test:frontend && npm run test:tooling",
-    "typecheck": "vue-tsc --noEmit -p apps/miniprogram/tsconfig.json && vue-tsc --noEmit -p apps/admin-platform/tsconfig.json && vue-tsc --noEmit -p apps/admin-domain/tsconfig.json && vue-tsc --noEmit -p packages/admin-shell/tsconfig.json && vue-tsc --noEmit -p packages/session-core/tsconfig.json",
-    "build": "npm run build:mp-weixin -w @vquan/miniprogram && npm run build -w @vquan/admin-platform && npm run build -w @vquan/admin-domain"
+    "typecheck": "vue-tsc --noEmit -p apps/miniprogram/tsconfig.json && vue-tsc --noEmit -p apps/testminiprogram/tsconfig.json && vue-tsc --noEmit -p apps/admin-platform/tsconfig.json && vue-tsc --noEmit -p apps/admin-domain/tsconfig.json && vue-tsc --noEmit -p packages/admin-shell/tsconfig.json && vue-tsc --noEmit -p packages/session-core/tsconfig.json",
+    "build": "npm run build:mp-weixin -w @vquan/miniprogram && npm run build:testminiprogram && npm run build -w @vquan/admin-platform && npm run build -w @vquan/admin-domain && npm run check:miniprogram-builds"
   },
   "devDependencies": {
     "vue-tsc": "3.3.11"

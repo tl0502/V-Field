@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import NotDeliveredPanel from '../../components/NotDeliveredPanel.vue'
+import HomeFeed from '../../components/community/HomeFeed.vue'
 import { useSystemScheme } from '../../composables/useSystemScheme'
 
 const { scheme } = useSystemScheme({ bindPage: true })
@@ -7,8 +7,7 @@ const { scheme } = useSystemScheme({ bindPage: true })
 
 <template>
   <view class="page-shell" :data-scheme="scheme">
-    <NotDeliveredPanel v-if="scheme === 'light'" title="首页" />
-    <NotDeliveredPanel v-else title="首页" />
+    <HomeFeed />
   </view>
 </template>
 

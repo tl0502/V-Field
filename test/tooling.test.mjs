@@ -62,3 +62,39 @@ test('miniprogram rejects HTTP server and non-WeChat build entrypoints', async (
     else process.env.UNI_PLATFORM = previousPlatform;
   }
 });
+
+test('test miniprogram cannot build through the production entrypoint or overwrite another output directory', async () => {
+  const vite = await viteFor('apps/miniprogram');
+  const keys = ['UNI_PLATFORM', 'VQUAN_BUILD_TARGET', 'UNI_OUTPUT_DIR'];
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  const testOutput = resolve(root, 'apps/testminiprogram/dist/build/mp-weixin');
+  const invalidEntries = [
+    { mode: 'testminiprogram', target: undefined, output: testOutput },
+    { mode: 'testminiprogram', target: 'testminiprogram', output: undefined },
+    { mode: 'testminiprogram', target: 'testminiprogram', output: resolve(root, 'apps/miniprogram/dist/build/mp-weixin') },
+    { mode: 'testminiprogram', target: 'testminiprogram', output: resolve(root, 'apps/testminiprogram-other/dist/build/mp-weixin') },
+    { mode: 'production', target: 'testminiprogram', output: testOutput }
+  ];
+  if (process.platform === 'win32') {
+    const otherDrive = root.toLowerCase().startsWith('c:') ? 'D:' : 'C:';
+    invalidEntries.push({ mode: 'testminiprogram', target: 'testminiprogram', output: `${otherDrive}\\outside\\mp-weixin` });
+  }
+  try {
+    process.env.UNI_PLATFORM = 'mp-weixin';
+    for (const { mode, target, output } of invalidEntries) {
+      if (target === undefined) delete process.env.VQUAN_BUILD_TARGET;
+      else process.env.VQUAN_BUILD_TARGET = target;
+      if (output === undefined) delete process.env.UNI_OUTPUT_DIR;
+      else process.env.UNI_OUTPUT_DIR = output;
+      await assert.rejects(vite.loadConfigFromFile(
+        { command: 'build', mode }, resolve(root, 'apps/miniprogram/vite.config.ts'),
+        resolve(root, 'apps/miniprogram'), 'silent'
+      ), /测试包必须通过 build:testminiprogram/);
+    }
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});

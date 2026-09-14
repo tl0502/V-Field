@@ -48,6 +48,10 @@ export function getWechatAppSecret() {
   return process.env.WECHAT_APP_SECRET?.trim() ?? '';
 }
 
+export function trustsCloudRunIdentity() {
+  return process.env.TRUST_CLOUDRUN_IDENTITY?.trim() === '1';
+}
+
 export function getBootstrapLoginName() {
   return process.env.PLATFORM_BOOTSTRAP_LOGIN?.trim() ?? '';
 }

@@ -14,6 +14,8 @@
 
 apps/miniprogram/**
 !apps/miniprogram/package.json
+apps/testminiprogram/**
+!apps/testminiprogram/package.json
 apps/admin-platform/**
 !apps/admin-platform/package.json
 apps/admin-domain/**

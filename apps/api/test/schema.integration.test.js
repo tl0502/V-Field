@@ -5,11 +5,14 @@ import { testDatabaseUrl } from './test-database.js';
 
 const expectedTables = [
   'admin_credentials',
+  'article_types',
+  'articles',
   'auth_sessions',
   'business_domains',
   'domain_join_requests',
   'domain_memberships',
   'domain_operator_grants',
+  'domain_tags',
   'platform_accounts',
   'platform_operator_grants',
   'schema_migrations',

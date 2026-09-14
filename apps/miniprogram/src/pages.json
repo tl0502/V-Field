@@ -56,7 +56,11 @@
         "backgroundColorTop": "#f7f8fa",
         "backgroundColorBottom": "#f7f8fa"
       }
-    }
+    },
+    { "path": "pages/user-search/user-search", "style": { "navigationBarTitleText": "按用户号找人" } },
+    { "path": "pages/join/join", "style": { "navigationBarTitleText": "加入业务域" } },
+    { "path": "pages/publish/publish", "style": { "navigationBarTitleText": "发布内容" } },
+    { "path": "pages/detail/detail", "style": { "navigationBarTitleText": "内容详情" } }
   ],
   "tabBar": {
     "color": "#8e949b",

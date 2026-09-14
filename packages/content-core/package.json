@@ -1,0 +1,7 @@
+{
+  "name": "@vquan/content-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": { "types": "./src/index.d.ts", "import": "./src/index.js" } }
+}

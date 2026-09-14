@@ -1,0 +1,34 @@
+{
+  "appid": "wx881064c3dbe54a18",
+  "projectname": "vquan-testminiprogram",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "dist/build/mp-weixin/",
+  "setting": {
+    "es6": false,
+    "enhance": false,
+    "minified": true,
+    "postcss": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

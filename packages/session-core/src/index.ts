@@ -1,7 +1,7 @@
 import { computed, shallowReadonly, shallowRef } from 'vue'
 
 export class SessionRequestError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(message: string, readonly status: number, readonly issues: string[] = []) {
     super(message)
     this.name = 'SessionRequestError'
   }
@@ -195,6 +195,23 @@ export function createSessionController<TAccount extends object>(options: Sessio
     return logoutFlight
   }
 
+  async function request<T>(path: string, requestOptions: SessionRequestOptions = {}): Promise<T> {
+    const stored = cookieAuth ? '' : options.storage.read()
+    if (!me.value || (!cookieAuth && !stored)) throw new SessionRequestError('unauthorized', 401)
+    const snapshot = { token: stored, revision }
+    try {
+      const result = await options.request<T>(path, { ...requestOptions, ...(stored ? { token: stored } : {}) })
+      if (!current(snapshot)) throw new SessionRequestError('session_changed', 409)
+      return result
+    } catch (error) {
+      if (current(snapshot) && isInvalidSession(error)) {
+        replaceToken('')
+        errorMessage.value = options.errorMessage(error, '登录已失效，请重新登录')
+      }
+      throw error
+    }
+  }
+
   return {
     me: shallowReadonly(me),
     busy: computed(() => busy.value || refreshing.value),
@@ -207,6 +224,7 @@ export function createSessionController<TAccount extends object>(options: Sessio
     }),
     retryLabel: computed(() => retryAction.value === 'logout' ? '重试退出' : '重试读取'),
     retry: () => retryAction.value === 'logout' ? logout() : refresh(),
+    request,
     refresh,
     login,
     logout

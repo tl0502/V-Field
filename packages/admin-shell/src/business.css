@@ -1,0 +1,55 @@
+.business-workspace { width: min(1040px, calc(100% - 48px)); margin: 0 auto; padding: 32px 0 64px; }
+.business-topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-bottom: 26px; border-bottom: 1px solid #e5e6e8; margin-bottom: 28px; }
+.business-brand { margin: 0; font-size: 23px; font-weight: 700; letter-spacing: -.03em; }
+.business-brand span { color: #ff6a00; margin-right: 16px; }
+.business-topbar small { display: block; color: #737b82; margin-top: 8px; }
+.business-panel { background: #fff; border: 1px solid #e7e9eb; border-radius: 14px; padding: 28px; margin-bottom: 24px; }
+.business-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+.business-heading h2 { font-size: 21px; margin: 0; }
+.business-kicker { color: #b65b23; font-size: 12px; margin: 0 0 8px; }
+.business-copy { color: #6b747c; line-height: 1.65; font-size: 14px; margin: 8px 0 18px; }
+.business-button { border: 1px solid #ff6a00; border-radius: 9px; background: #ff6a00; color: #fff; padding: 10px 18px; font: inherit; font-size: 14px; cursor: pointer; line-height: 1.5; }
+.business-button.secondary { border-color: #dce0e3; background: #fff; color: #263139; }
+.business-button.danger { color: #af4c37; }
+.business-button:disabled { opacity: .5; cursor: not-allowed; }
+.business-button:focus-visible, .business-tabs button:focus-visible { outline: 3px solid #7ba4d8; outline-offset: 3px; }
+.business-field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #37414a; }
+.business-field small { color: #899198; margin-left: 8px; }
+.business-field input, .business-field select { border: 1px solid #d9dfe4; border-radius: 9px; background: #fff; color: #202a32; padding: 11px 12px; min-width: 0; font: inherit; }
+.business-field input:focus, .business-field select:focus { outline: 2px solid #7ba4d8; outline-offset: 2px; }
+.business-inline-form { display: flex; gap: 14px; align-items: flex-end; margin: 18px 0; }
+.business-inline-form .grow { flex: 1; max-width: 480px; }
+.business-form { display: flex; flex-direction: column; gap: 18px; border-top: 1px solid #e7e9eb; padding-top: 24px; margin-top: 24px; }
+.business-form h3 { margin: 0; font-size: 18px; }
+.business-rules { border: 1px solid #e1e6e9; border-radius: 10px; margin: 0; padding: 16px; }
+.business-rules legend { color: #5b6b76; padding: 0 8px; font-size: 14px; }
+.business-check { display: inline-flex; gap: 8px; align-items: center; margin: 6px 24px 6px 0; font-size: 14px; }
+.business-check input { accent-color: #ff6a00; width: 16px; height: 16px; }
+.business-feedback { padding: 12px 16px; background: #edf6f0; color: #316349; border-radius: 8px; font-size: 14px; line-height: 1.6; }
+.business-feedback--error { background: #fbefeb; color: #ad4c34; }
+.business-badge { display: inline-block; padding: 5px 10px; color: #61717c; background: #f0f4f6; border-radius: 6px; font-size: 12px; margin-left: 10px; }
+.business-result { border-top: 1px solid #e7e9eb; margin-top: 26px; padding-top: 24px; }
+.public-user-id { font-size: 27px; font-variant-numeric: tabular-nums; letter-spacing: .08em; }
+.business-password { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; margin-bottom: 24px; padding: 20px; background: #fff7ed; border: 1px solid #f4ddba; border-radius: 10px; }
+.business-password code { word-break: break-all; font-size: 17px; color: #774312; }
+.business-password small { color: #8b713f; }
+.business-list { list-style: none; margin: 0; padding: 0; }
+.business-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 1px solid #edf0f2; padding: 20px 0; }
+.business-row:last-child { border-bottom: 0; }
+.business-row .business-copy { margin-bottom: 0; }
+.business-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.business-empty { color: #879198; padding: 30px 0; text-align: center; line-height: 1.7; }
+.business-tabs { display: flex; gap: 24px; margin: 24px 0; border-bottom: 1px solid #e1e5e8; }
+.business-tabs button { background: transparent; border: 0; border-bottom: 3px solid transparent; padding: 13px 4px; color: #7b858d; font: inherit; cursor: pointer; }
+.business-tabs button.active { color: #263139; border-bottom-color: #ff6a00; font-weight: 600; }
+.business-domain-bar .business-field { max-width: 300px; }
+@media (max-width: 600px) { .business-panel { padding: 20px; } .business-row, .business-topbar { align-items: flex-start; flex-direction: column; } .business-inline-form { flex-wrap: wrap; } }
+@media (prefers-color-scheme: dark) {
+  .business-panel, .business-button.secondary, .business-field input, .business-field select { background: #1c1c1e; color: #e7ecef; border-color: #3a3a3c; }
+  .business-copy, .business-topbar small, .business-field { color: #a3adb5; }
+  .business-topbar, .business-tabs, .business-row, .business-form, .business-result, .business-rules { border-color: #363b40; }
+  .business-tabs button.active { color: #f5f5f5; }
+  .business-badge { background: #2a333a; color: #b1c3d0; }
+  .business-password { background: #342a20; border-color: #615039; }
+  .business-password code { color: #f5d4a7; }
+}

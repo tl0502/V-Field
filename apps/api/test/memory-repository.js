@@ -19,6 +19,7 @@ export function createMemoryRepository() {
     async createPlatformOperator({ accountId, loginName, passwordHash, now, source = 'bootstrap' }) {
       if (operators.size > 0) return false;
       accounts.set(accountId, { id: accountId, status: 'active' });
+      accounts.get(accountId).userId = String(10000000 + accounts.size);
       operators.set(accountId, { accountId, grantedAt: now, source });
       credentials.set(loginName, {
         account_id: accountId,
@@ -30,7 +31,7 @@ export function createMemoryRepository() {
     },
 
     async findAdminCredentialByLoginName(loginName) {
-      return credentials.get(loginName) ?? null;
+      return credentials.get(loginName) ?? [...credentials.values()].find((value) => accounts.get(value.account_id)?.userId === loginName) ?? null;
     },
 
     async rotateSession({
@@ -95,6 +96,7 @@ export function createMemoryRepository() {
 
     async createWechatAccount({ accountId, identityId, appId, openid, unionid, now }) {
       accounts.set(accountId, { id: accountId, status: 'active' });
+      accounts.get(accountId).userId = String(10000000 + accounts.size);
       wechatIdentities.set(wechatKey(appId, openid), {
         id: identityId,
         account_id: accountId,
@@ -120,6 +122,7 @@ export function createMemoryRepository() {
       const credential = [...credentials.values()].find((item) => item.account_id === accountId);
       return {
         id: account.id,
+        userId: account.userId,
         status: account.status,
         platformOperator: operators.has(accountId),
         domainOperatorDomainIds: domainOperators

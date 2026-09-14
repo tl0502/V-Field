@@ -31,8 +31,8 @@ function createAuth(overrides = {}) {
   };
 }
 
-async function listen(t, auth) {
-  const server = createApp({ auth });
+async function listen(t, auth, options = {}) {
+  const server = createApp({ auth, ...options });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const address = server.address();
@@ -218,7 +218,7 @@ test('HTTP wechat login accepts WeChat CloudRun identity headers', async (t) => 
       }
     }
   });
-  const base = await listen(t, auth);
+  const base = await listen(t, auth, { trustCloudRunIdentity: true });
   const response = await jsonRequest(base, '/api/auth/wechat/login', {
     method: 'POST',
     body: { code: 'unused-code' },
@@ -233,6 +233,18 @@ test('HTTP wechat login accepts WeChat CloudRun identity headers', async (t) => 
   assert.equal(exchanged, 0);
   assert.ok(response.body.token);
   assert.equal(response.body.audience, 'miniprogram');
+});
+
+test('direct HTTP ignores caller-supplied WeChat identity headers and requires code exchange', async (t) => {
+  let exchanged = 0;
+  const { auth } = createAuth({ wechatClient: { async code2Session(code) { exchanged++; return { openid: `verified-${code}`, unionid: null }; } } });
+  const base = await listen(t, auth);
+  const rejected = await jsonRequest(base, '/api/auth/wechat/login', { method: 'POST', body: {}, headers: { 'x-wx-openid': 'untrusted-identity', 'x-wx-appid': 'wx-test-app' } });
+  assert.equal(rejected.status, 400);
+  assert.equal(rejected.body.error, 'wechat_code_required');
+  const accepted = await jsonRequest(base, '/api/auth/wechat/login', { method: 'POST', body: { code: 'official-code' }, headers: { 'x-wx-openid': 'untrusted-identity' } });
+  assert.equal(accepted.status, 200);
+  assert.equal(exchanged, 1);
 });
 
 test('HTTP admin login, me, logout and dev token rejection', async (t) => {

@@ -1,3 +1,4 @@
+import './business.css'
 export { createAdminRouter } from './router'
 export { initAdminShell } from './shell'
 export type { AdminShellConfig } from './shell'

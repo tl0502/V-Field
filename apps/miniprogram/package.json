@@ -11,6 +11,7 @@
     "@dcloudio/uni-components": "3.0.0-4070620250821001",
     "@dcloudio/uni-mp-weixin": "3.0.0-4070620250821001",
     "@vquan/session-core": "*",
+    "@vquan/content-core": "*",
     "vue": "3.4.21"
   },
   "devDependencies": {

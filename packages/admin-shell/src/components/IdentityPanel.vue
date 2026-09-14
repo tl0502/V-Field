@@ -24,8 +24,8 @@ const roleText = computed(() => {
     <h1 class="title">{{ title }}</h1>
     <dl class="facts">
       <div class="fact">
-        <dt>平台账号</dt>
-        <dd>{{ me.account.id }}</dd>
+        <dt>用户号</dt>
+        <dd>{{ me.account.userId }}</dd>
       </div>
       <div class="fact">
         <dt>登录名</dt>
@@ -34,10 +34,6 @@ const roleText = computed(() => {
       <div class="fact">
         <dt>当前角色</dt>
         <dd>{{ roleText }}</dd>
-      </div>
-      <div class="fact">
-        <dt>本轮未交付</dt>
-        <dd>{{ me.notDelivered.join('、') }}</dd>
       </div>
     </dl>
     <button class="logout" type="button" :disabled="busy" @click="emit('logout')">

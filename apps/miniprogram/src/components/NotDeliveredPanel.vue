@@ -8,7 +8,7 @@ defineProps<{
   <view class="undelivered-panel">
     <view class="empty-card">
       <text class="empty-title">{{ title }}</text>
-      <text class="empty-copy">本轮只交付身份骨架，不交付发布或阅读。</text>
+      <text class="empty-copy">此功能暂未开放。已发布内容可在首页查看。</text>
     </view>
   </view>
 </template>

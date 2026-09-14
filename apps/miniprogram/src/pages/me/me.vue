@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
 import AccountIdentityPanel from '../../components/AccountIdentityPanel.vue'
+import JoinStatusPanel from '../../components/community/JoinStatusPanel.vue'
 import { useMiniprogramSession } from '../../composables/useMiniprogramSession'
 import { useSystemScheme } from '../../composables/useSystemScheme'
 
@@ -40,6 +41,7 @@ function goLogin() {
       @logout="logout"
       @login="goLogin"
     />
+    <JoinStatusPanel />
   </view>
 </template>
 

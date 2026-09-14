@@ -50,14 +50,14 @@ export async function requestApi<T>(path: string, options: SessionRequestOptions
     timeout: 15000
   })
 
-  let data: T & { error?: string }
+  let data: T & { error?: string; issues?: string[] }
   try {
     data = (typeof response.data === 'string' ? JSON.parse(response.data) : response.data) as T & { error?: string }
   } catch {
     throw new SessionRequestError('invalid_response', response.statusCode)
   }
   if (response.statusCode >= 400) {
-    throw new SessionRequestError(data?.error || `http_${response.statusCode}`, response.statusCode)
+    throw new SessionRequestError(data?.error || `http_${response.statusCode}`, response.statusCode, data?.issues)
   }
   return data
 }

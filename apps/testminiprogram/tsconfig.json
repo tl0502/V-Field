@@ -1,0 +1,4 @@
+{
+  "extends": "../miniprogram/tsconfig.json",
+  "include": ["src/**/*.ts"]
+}

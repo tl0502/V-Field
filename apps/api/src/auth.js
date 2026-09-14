@@ -26,6 +26,7 @@ function presentAccount(account, audience) {
   return {
     account: {
       id: account.id,
+      userId: account.userId,
       status: account.status
     },
     roles: {
@@ -35,7 +36,7 @@ function presentAccount(account, audience) {
     },
     audience,
     loginName: account.loginName,
-    notDelivered: ['assign-domain-operator', 'join-approval', 'publish', 'read']
+    notDelivered: ['profile-edit', 'media-upload', 'comments', 'messages', 'follow', 'content-search']
   };
 }
 
@@ -189,6 +190,7 @@ export function createAuthService({
         }
       }
       bound = await repository.findWechatIdentity(identityAppId, identity.openid);
+      if (!bound) throw new AuthError('wechat_login_failed', 503);
     } else {
       await repository.touchWechatLogin(bound.id, current, identity.unionid);
     }

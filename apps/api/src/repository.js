@@ -1,4 +1,6 @@
-export function createIdentityRepository(pool) {
+import { insertAccount, newPublicUserId } from './account-id.js';
+
+export function createIdentityRepository(pool, { generateUserId = newPublicUserId } = {}) {
   async function countPlatformOperators() {
     const result = await pool.query('SELECT count(*)::int AS count FROM platform_operator_grants');
     return result.rows[0].count;
@@ -16,11 +18,7 @@ export function createIdentityRepository(pool) {
         await client.query('COMMIT');
         return false;
       }
-      await client.query(
-        `INSERT INTO platform_accounts (id, status, created_at, updated_at)
-         VALUES ($1, 'active', $2, $2)`,
-        [accountId, now]
-      );
+      await insertAccount(client, accountId, now, generateUserId);
       await client.query(
         `INSERT INTO platform_operator_grants (account_id, granted_at, source)
          VALUES ($1, $2, $3)`,
@@ -46,7 +44,7 @@ export function createIdentityRepository(pool) {
       `SELECT c.account_id, c.login_name, c.password_hash, a.status
        FROM admin_credentials c
        JOIN platform_accounts a ON a.id = c.account_id
-       WHERE c.login_name = $1`,
+       WHERE c.login_name = $1 OR a.user_id = $1`,
       [loginName]
     );
     return result.rows[0] ?? null;
@@ -140,11 +138,7 @@ export function createIdentityRepository(pool) {
 
     try {
       await client.query('BEGIN');
-      await client.query(
-        `INSERT INTO platform_accounts (id, status, created_at, updated_at)
-         VALUES ($1, 'active', $2, $2)`,
-        [accountId, now]
-      );
+      await insertAccount(client, accountId, now, generateUserId);
       await client.query(
         `INSERT INTO wechat_identities
            (id, account_id, app_id, openid, unionid, first_bound_at, last_login_at)
@@ -171,7 +165,7 @@ export function createIdentityRepository(pool) {
 
   async function getAccountProjection(accountId) {
     const account = await pool.query(
-      `SELECT id, status FROM platform_accounts WHERE id = $1`,
+      `SELECT id, user_id, status FROM platform_accounts WHERE id = $1`,
       [accountId]
     );
     if (!account.rows[0]) return null;
@@ -197,6 +191,7 @@ export function createIdentityRepository(pool) {
 
     return {
       id: account.rows[0].id,
+      userId: account.rows[0].user_id,
       status: account.rows[0].status,
       platformOperator: operators.rowCount > 0,
       domainOperatorDomainIds: domainOperators.rows.map((row) => row.domain_id),

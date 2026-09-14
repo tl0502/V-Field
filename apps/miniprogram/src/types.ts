@@ -1,6 +1,7 @@
 export interface AccountMe {
   account: {
     id: string
+    userId: string
     status: string
   }
   roles: {

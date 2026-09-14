@@ -6,7 +6,7 @@ import './styles.css'
 initAdminShell({
   audience: 'admin-platform',
   loginTitle: '平台管理登录',
-  loginCopy: '使用同一套平台账号的管理登录名和密码。本轮只验证身份，不交付指定域运营者。',
+  loginCopy: '使用平台账号的管理登录名或用户号及管理密码，进入平台管理。',
   identityTitle: '平台管理 · 当前身份'
 })
 

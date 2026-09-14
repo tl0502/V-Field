@@ -24,10 +24,9 @@ const roleText = computed(() => {
   return '平台账号用户'
 })
 
-const accountId = computed(() => (props.me ? props.me.account.id : ''))
-const notDelivered = computed(() =>
-  props.me ? props.me.notDelivered : ['assign-domain-operator', 'join-approval', 'publish', 'read']
-)
+const accountId = computed(() => props.me?.account.userId ?? '')
+function copyUserId() { if (accountId.value) uni.setClipboardData({ data: accountId.value }) }
+function findUser() { uni.navigateTo({ url: '/pages/user-search/user-search' }) }
 </script>
 
 <template>
@@ -38,16 +37,15 @@ const notDelivered = computed(() =>
     </view>
     <view v-if="!me" class="empty-card">
       <text class="empty-title">尚未登录</text>
-      <text class="empty-copy">请先完成微信登录。本轮只交付身份骨架，不交付发布或阅读。</text>
+      <text class="empty-copy">登录后可查找用户、申请入域；成为成员后即可发布内容。</text>
       <button class="login-button" :disabled="busy" @click="emit('login')">去登录</button>
     </view>
     <view v-else class="card">
-      <text class="label">平台账号</text>
+      <text class="label">用户号</text>
       <text class="value">{{ accountId }}</text>
+      <view class="user-actions"><button @click="copyUserId">复制用户号</button><button @click="findUser">按用户号找人</button></view>
       <text class="label">当前角色</text>
       <text class="value">{{ roleText }}</text>
-      <text class="label">本轮未交付</text>
-      <text class="value">{{ notDelivered.join('、') }}</text>
       <button class="logout-button" :disabled="busy" @click="emit('logout')">退出登录</button>
     </view>
   </view>
@@ -55,7 +53,6 @@ const notDelivered = computed(() =>
 
 <style scoped>
 .identity-panel {
-  min-height: 100vh;
   padding: 32rpx;
   background-color: #f7f8fa;
   box-sizing: border-box;
@@ -77,6 +74,10 @@ const notDelivered = computed(() =>
   color: #d94b3d;
   font-size: 26rpx;
 }
+
+.user-actions { display: flex; gap: 16rpx; margin: 12rpx 0 28rpx; }
+.user-actions button { flex: 1; font-size: 24rpx; color: #286bc4; background: #edf4fc; border-radius: 10rpx; margin: 0; }
+.user-actions button::after { border: 0; }
 
 .empty-title,
 .label {

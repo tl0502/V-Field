@@ -26,7 +26,7 @@ function onSubmit() {
 <template>
   <form class="login-form" @submit.prevent="onSubmit">
     <label class="field">
-      <span class="label">管理登录名</span>
+      <span class="label">用户号 / 管理登录名</span>
       <input v-model="loginName" class="input" name="loginName" autocomplete="username" />
     </label>
     <label class="field">

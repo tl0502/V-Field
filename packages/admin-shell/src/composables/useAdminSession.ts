@@ -15,14 +15,14 @@ async function request<T>(path: string, options: SessionRequestOptions = {}): Pr
     credentials: 'include',
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined
   })
-  let data: T & { error?: string }
+  let data: T & { error?: string; issues?: string[] }
   try {
     data = await response.json()
   } catch {
     throw new SessionRequestError('invalid_response', response.status)
   }
   if (!response.ok) {
-    throw new SessionRequestError(data?.error || `http_${response.status}`, response.status)
+    throw new SessionRequestError(data?.error || `http_${response.status}`, response.status, data?.issues)
   }
   return data
 }
