@@ -1,0 +1,553 @@
+schema: comet.native.v4
+name: p3-first-user-loop
+language: zh-CN
+phase: archive
+status: done
+state_version: 10
+brief: brief.md
+shape_confirmation_hash: e1a9cda8707576351dbf802c7cff798965c61381b90336b3497133a6f216d2b3
+spec_changes:
+  - capability: first-user-loop
+    operation: create
+    source: specs/first-user-loop/spec.md
+workspace:
+  isolation: current
+  change_branch: main
+  target_branch: main
+  finish: null
+loop:
+  stage: done
+  goal_cycle: 2
+  iteration: 1
+  attempt: 1
+  retry_epoch: 0
+  failed_iteration_count: 0
+  no_progress_count: 0
+  execution_failure_count: 0
+  previous_unresolved_ids: []
+  next_action: null
+acceptance:
+  - id: A1
+    source: brief.md
+    text: "A1:
+      从已初始化的平台运营者开始，真实指定域运营者；域运营者从页面建立文章类型并批准入域申请；成员在小程序按该类型发布；未登录访客从当前域列表进入详情，\
+      读到绑定实际作者和该域的完整内容。"
+    result: passed
+    reason:
+      text: 现场证据覆盖平台指定运营者、后台配置类型和审批、真实微信身份发布及退出后的访客阅读。独立匿名 GET
+        再次读到小篇完整内容、实际作者用户号及汽车验证域。
+      truncated: false
+  - id: A2
+    source: brief.md
+    text: "A2:
+      非平台运营者不能读取账号管理信息或授予域角色；普通用户按用户号查找只获得最小公开识别结果。非本域运营者不能审批或管理类型/标签；非成员不能发布或创\
+      建供文章使用的新标签；非作者不能删除。篡改账号、域、类型、标签、内容 ID 均不能越权，失败不改变数据。"
+    result: passed
+    reason:
+      text: 路由固定会话受众，仓储分别检查平台权限、域权限、成员资格和作者身份，写入不接受客户端作者。PostgreSQL
+        测试验证独立角色授权、跨域标签拒绝及完整回滚；公开找人仅返回用户号。
+      truncated: false
+  - id: A3
+    source: brief.md
+    text: "A3:
+      允许纯正文的类型可以不带车源发布，要求车源的类型缺少卡片时拒绝；自由描述、换行和正文/卡片顺序保存准确；空内容、图片、未知模板/版本和非法结构拒绝\
+      ，不能产生半篇内容。"
+    result: passed
+    reason:
+      text: 共享内容校验与服务端类型规则共同支持纯正文及按类型必需车源，拒绝空内容、未知字段/版本、重复块标识和非法结构。相关测试与最大文章逐字回读证据确认换行、描述和有序
+        Block 保存正确。
+      truncated: false
+  - id: A4
+    source: brief.md
+    text: "A4:
+      平台后台通过公开用户号找到目标并指定运营者；无凭证时现场生成可复制的随机密码，目标用该用户号/密码登录域后台；已有凭证沿用，重复指定不覆盖密码或重\
+      复创建账号，已有平台登录仍可用；失败可重试且不误报生成密码有效。"
+    result: passed
+    reason:
+      text: 平台页面使用安全随机密码，在提交前展示并在失败时保留；服务端原子建立凭证和资格，并返回本次密码是否实际有效。现场用户号登录及 PostgreSQL
+        重复指定测试确认原账号、已有密码和既有平台登录保持有效。
+      truncated: false
+  - id: A5
+    source: brief.md
+    text: "A5: 列表、详情、登录、申请状态、编辑/预览、两套后台及标签维护均可实际操作；旧内容布局可对照，保留 P2
+      原生导航/底栏与浅色；加载、空、失败、不可用状态明确，后置入口没有虚假成功或功能承诺。"
+    result: passed
+    reason:
+      text: 已核对业务页面、两后台实现、现有模拟器截图和运行记录，并对照指定旧版布局。加载、空、错误和未开放状态明确，原生导航与浅色保留；用户确认底栏图标正常且可切页。
+      truncated: false
+  - id: A6
+    source: brief.md
+    text: "A6: 在现有四套工程和新版测试库 vflie
+      补齐所需数据/约束；增量迁移不破坏保留账号的关联，若实际使用用户授权清理则核验准确目标与重建结果。正式会话、Cookie
+      受众隔离、锁浅色与深色源保留不回退，不依赖开发令牌、旧数据或对象存储。"
+    result: passed
+    reason:
+      text: 003–005 增量迁移补齐用户号、取消状态与内容配置约束，现场记录确认 vflie
+        保留原账号且未清库。隔离数据库迁移、会话受众、类型检查和全部构建通过；正式与测试适配器隔离，浅色及既有深色源保留。
+      truncated: false
+  - id: A7
+    source: brief.md
+    text: "A7:
+      申请者能看见待审/批准/拒绝/取消；待审重复提交不新增，本人可取消，拒绝/取消后可新申请；批准与成员资格一致，取消/审批竞争只形成一个最终结果，已\
+      入域不重复申请。"
+    result: passed
+    reason:
+      text: 申请、取消和审批使用一致锁顺序与事务，批准和成员资格原子写入。真实页面记录及 PostgreSQL/Cookie
+        测试覆盖取消、拒绝、重申请、重复提交/审批和取消审批竞争，结果与成员资格一致。
+      truncated: false
+  - id: A8
+    source: brief.md
+    text: "A8:
+      作者取消删除确认时文章保留；确认删除成功后公开列表移除且原详情链接不返回正文/卡片；失败有重试反馈，重复删除不影响其他文章；无已发布内容更新、卡片\
+      单独删除、下架恢复入口。"
+    result: passed
+    reason:
+      text: 小篇取消删除后保留，最大篇确认删除后旧链接不可读；独立公开查询确认最大篇返回
+        404，小篇仍完整存在。服务端作者检查和重复删除测试通过，界面提供失败重试且没有已发布更新或恢复入口。
+      truncated: false
+  - id: A9
+    source: brief.md
+    text: "A9:
+      光标插入、卡片编辑/移除/换位、预览返回及离开后草稿恢复不丢失/串改内容；正文顺序不因换位改变，账号/域间草稿隔离；发布失败保留草稿，同次发布重试\
+      不重复建文章，成功后进入真实详情。"
+    result: passed
+    reason:
+      text: 编辑组件测试及模拟器记录覆盖光标插入、编辑、移除、拖动换位、预览和草稿恢复。草稿按账号与域隔离，旧响应受版本保护；失联发布实测通过原操作号回执进入同一文章，相关幂等回归通过。
+      truncated: false
+  - id: A10
+    source: brief.md
+    text: "A10:
+      访客读取的标题、作者、域、类型、时间、正文、卡片和标签准确；无自动到期或车源状态筛选；类型改名/规则更新/停用及标签停用不改写或隐藏历史文章；草稿\
+      、已删除内容和私有身份字段不可读。"
+    result: passed
+    reason:
+      text: 匿名读取与截图核对了真实标题、作者、域、类型、时间、正文、卡片和标签。类型/标签停用后历史快照仍可读，删除内容拒绝读取；公开投影不含私有身份，分页及三个时区的时间显示测试通过。
+      truncated: false
+  - id: A11
+    source: brief.md
+    text: "A11:
+      域运营者从空类型列表创建、编辑、停用本域类型，配置正文可用/必填及卡片可用/最少/最多；矛盾规则和越界数量拒绝；编辑器与服务端一致执行，全部类型停\
+      用后明确暂停新发布而保留历史阅读。"
+    result: passed
+    reason:
+      text: 后台现场完成类型创建、编辑、停用和恢复；全部停用时截图明确暂停发布并保留草稿。共享规则校验覆盖矛盾配置、数量边界，版本条件防止覆盖新配置；历史文章继续读取原快照。
+      truncated: false
+  - id: A12
+    source: brief.md
+    text: "A12:
+      空标签库中，成员可随发布创建新词并供同域复用，运营者可新增/查看/停用；同名含并发创建仅产生一条，重复选择不重复展示；停用名不能通过再次新建绕过，\
+      其他域不受影响；保存/预览/列表/详情一致，未选择标签也能发布，无按标签找文章产品。"
+    result: passed
+    reason:
+      text: 现场完成成员创建/复用及运营者新增/停用标签。数据库测试验证规范化同名并发唯一、显示名称保留、跨域隔离和停用名不可绕过；补充检查确认
+        ID/名称重复引用去重及七个不同标签完整回滚。
+      truncated: false
+  - id: A13
+    source: brief.md
+    text: "A13: 按输入边界表验证最小、最大、超限和非法值；包含最大合法正文及 50 张最大描述卡片的文章经小程序传输后能完整读回，发布路由 1 MiB
+      限制与既有身份路由 64 KiB 限制分别生效，超限不写入部分数据。"
+    result: passed
+    reason:
+      text: Runtime 补充输入边界矩阵通过。max-payload-progress.txt 的真实终态为 passed：484430 字节、20000
+        正文字数、50×2000 字车源及六个最大标签，经测试小程序实际传输后逐字公开读回；HTTP 测试分别验证 1 MiB 与 64 KiB 限制。
+      truncated: false
+  - id: A14
+    source: brief.md
+    text: "A14:
+      编辑中的类型规则或标签可用状态被运营者修改后，旧草稿保留并提示核对，最新发布校验拒绝不合规提交；停用旧标签、重试发布和并发配置不能造成隐式删词/删\
+      卡、重复文章或不符合提交时规则的文章。"
+    result: passed
+    reason:
+      text: 现场旧规则提交被拒绝后标题和正文仍保留，刷新与接受新规则需要明确操作。草稿/幂等测试及 Runtime
+        补充事务检查确认并发配置不会覆盖新版本，类型或标签停用与发布形成确定先后结果且无部分写入。
+      truncated: false
+  - id: A15
+    source: brief.md
+    text: "A15: 新注册与保留的已有账号均取得首位非零的固定 8
+      位随机数字、全平台唯一且不可修改的公开用户号；重登、并发注册及重复迁移不换号、串号或改变内部 UUID
+      与身份/权限关联，号码冲突不会产生重复账号或半条身份。"
+    result: passed
+    reason:
+      text: 所有账号创建路径使用安全随机八位号码，数据库保障格式、唯一性和不可修改。真实 PostgreSQL
+        测试覆盖旧账号补号、重复迁移、碰撞重试及五次并发首次登录，UUID 和微信关联保持稳定且没有多余账号。
+      truncated: false
+  - id: A16
+    source: brief.md
+    text: "A16:
+      本人能查看/复制公开用户号；已登录用户按完整号码查到对应有效账号，输入非法、无结果和请求失败有明确反馈。用户检索仅返回最小公开识别结果，不泄露
+      UUID、微信身份、管理凭证或角色；后台查询和域管理登录解析到同一个账号，知道用户号不能取得额外权限。"
+    result: passed
+    reason:
+      text: 现场复制读回本人用户号，找人页面验证有效、非法和无结果分支；请求异常使用独立失败反馈。接口只返回有效账号的
+        userId，未登录拒绝查询；后台查询与用户号登录解析到同一账号，权限仍独立校验。
+      truncated: false
+builder_handoff:
+  candidate_id: fec2f50d-dd87-4c55-bd4a-a85f0ac61ed6
+  identity_provider: skill-coordinated
+  builder_execution_ref: skill-coordinated:builder:7d618f96-a9c8-496d-945b-8bda0ac4f7ee
+  iteration: 1
+  summary:
+    text: 完成 P3 首个完整用户流程及固定 8
+      位随机公开用户号：账号补号/检索/管理登录、指定运营者、申请取消审批、域类型与标签、草稿/正文车源编辑/预览/幂等发布、访客阅读和作者删除。新增共享源码的
+      apps/testminiprogram，直连用户指定测试后端，正式 CloudRun 构建保持隔离。实际小程序与两后台闭环已走通，484430
+      字节最大合法内容经测试包 uni.request 发布、无登录公开逐字读回、相同操作号重试及回执均通过。现场证据见
+      .tmp/p3-verification/ui-evidence.md 和 max-payload-progress.txt。
+    truncated: false
+  addressed_acceptance_ids:
+    - A1
+    - A2
+    - A3
+    - A4
+    - A5
+    - A6
+    - A7
+    - A8
+    - A9
+    - A10
+    - A11
+    - A12
+    - A13
+    - A14
+    - A15
+    - A16
+  checks:
+    - name:
+        text: node scripts/test-postgres.mjs
+        truncated: false
+      result: passed
+      note:
+        text: 52/52，0 skip；真实隔离 PostgreSQL 事务/并发/迁移/HTTP Cookie 与角色兼任回归。
+        truncated: false
+    - name:
+        text: 相关前端组件、草稿与时区回归
+        truncated: false
+      result: passed
+      note:
+        text: 独立 reviewer 最新相关检查 23/23；前序会话/草稿/编辑检查 33/33。新回归已接入根 test:frontend。
+        truncated: false
+    - name:
+        text: npm run build
+        truncated: false
+      result: passed
+      note:
+        text: 最终正式小程序、测试小程序与两后台构建通过，产物隔离检查通过；.tmp/p3-verification/final-build.log。
+        truncated: false
+    - name:
+        text: test/tooling.test.mjs
+        truncated: false
+      result: passed
+      note:
+        text: 4/4；固定输出路径和 Windows 跨盘边界。
+        truncated: false
+    - name:
+        text: 小程序及后台真实流程
+        truncated: false
+      result: passed
+      note:
+        text: 实际身份、用户号复制/查找、取消拒绝重申批准、编辑预览恢复、失联回执重试、最大合法传输、规则停用保草稿、历史快照、访客阅读、作者取消及确认删除均有现场证据。
+        truncated: false
+    - name:
+        text: git diff --check
+        truncated: false
+      result: passed
+      note:
+        text: 当前工作树无空白错误。
+        truncated: false
+    - name:
+        text: npm test（最终汇总）
+        truncated: false
+      result: not-run
+      note:
+        text: 此前完整测试通过，最新变更的相关检查已通过；最终汇总留给 Runtime 必要检查。
+        truncated: false
+    - name:
+        text: npm run typecheck（最终汇总）
+        truncated: false
+      result: not-run
+      note:
+        text: 最近前端修复后正式/测试小程序检查通过，此前完整工程检查通过；最终汇总留给 Runtime。
+        truncated: false
+  checks_truncated: false
+  known_limits:
+    - text: 当前实际运行验证使用用户指定 HTTPS 测试后端与两个本地后台；没有 Git push、CloudRun 新版本部署或正式包线上运行声明。
+      truncated: false
+    - text: 小程序现场证据来自微信开发者工具模拟器，未做真机/iOS及物理键盘输入验证。用户已明确确认当前测试窗口的四个原生底栏图标显示正常并可切换页面。
+      truncated: false
+    - text: 嵌套 Vue 小程序组件通过已编译真实事件 handler 驱动并核对界面/数据，页级按钮使用 element_action。原生确认弹窗使用官方
+        wx API mock 的确认/取消结果，每次已恢复。
+      truncated: false
+  known_limits_truncated: false
+  review:
+    status: passed
+    summary:
+      text: 新的只读 Builder reviewer 已覆盖 A1-A16
+        对应实现和新增测试入口；失联发布幂等、禁用申请者错误分流、焦点失效、本地时间、异步拖动量测/取消与旧回调均已复核关闭，没有未解决的必要缺陷。
+      truncated: false
+    reviewer_execution_ref: b1-r4-20260914
+  submitted_at: 2026-09-14T17:25:28.733Z
+blockers: []
+verification:
+  candidate_id: fec2f50d-dd87-4c55-bd4a-a85f0ac61ed6
+  identity_provider: skill-coordinated
+  verifier_execution_ref: skill-coordinated:verifier:a9e59bf4-8623-480b-bddb-5eab6a35b460
+  iteration: 1
+  attempt: 1
+  assurance: skill-coordinated
+  verdict: pass
+  checks:
+    - id: p3-unit-frontend-tooling
+      name:
+        text: npm test
+        truncated: false
+      argv_display:
+        - text: test
+          truncated: false
+      argv_truncated: false
+      cwd_ref: .
+      status: passed
+      exit_code: 0
+      duration_ms: 22453
+    - id: p3-types
+      name:
+        text: npm run typecheck
+        truncated: false
+      argv_display:
+        - text: run
+          truncated: false
+        - text: typecheck
+          truncated: false
+      argv_truncated: false
+      cwd_ref: .
+      status: passed
+      exit_code: 0
+      duration_ms: 29450
+    - id: p3-postgres
+      name:
+        text: npm run test:postgres
+        truncated: false
+      argv_display:
+        - text: run
+          truncated: false
+        - text: test:postgres
+          truncated: false
+      argv_truncated: false
+      cwd_ref: .
+      status: passed
+      exit_code: 0
+      duration_ms: 11666
+    - id: p3-builds
+      name:
+        text: npm run build
+        truncated: false
+      argv_display:
+        - text: run
+          truncated: false
+        - text: build
+          truncated: false
+      argv_truncated: false
+      cwd_ref: .
+      status: passed
+      exit_code: 0
+      duration_ms: 35404
+    - id: p3-verifier-input-boundaries
+      name:
+        text: P3 independent input boundary matrix
+        truncated: false
+      argv_display:
+        - text: --input-type=module
+          truncated: false
+        - text: --eval
+          truncated: false
+        - text: import assert from 'node:assert/strict'; import { randomUUID } from
+            'node:crypto'; import { prepareArticle, validateType,
+            validateTagName, articleRuleIssues, codePointLength, DEFAULT_RULES }
+            from './packages/content-core/src/index.js'; const passed=[]; const
+            check=(name,fn)=>{fn();passed.push(name)}; const
+            text=(value,id='body')=>({id,type:'text',version:1,text:value});
+            const
+            car=(value,id='car')=>({id,type:'car',version:1,description:value});
+            const
+            base=()=>({operationId:randomUUID(),typeId:randomUUID(),typeVersion:1,title:'a',blocks:[text('a')],tags:[]});
+            const reject=(fn)=>assert.throws(fn,{code:'validation_failed'});
+            check('title min/max/over/empty/controls',()=>{for(const n of
+            [1,80])assert.equal(codePointLength(prepareArticle({...base(),title:'🚗'.repeat(n)}).title),n);
+            for(const title of ['', ' ', '🚗'.repeat(81), 'a\nb',
+            '\u0000'])reject(()=>prepareArticle({...base(),title}));});
+            check('type name min/max/over and normalization',()=>{for(const n of
+            [1,32])assert.equal(codePointLength(validateType({name:'🚗'.repeat(n),enabled:true,rules:DEFAULT_RULES}).name),n);for(const
+            name of ['', ' ', '🚗'.repeat(33),
+            'a\nb'])reject(()=>validateType({name,enabled:true,rules:DEFAULT_RULES}));assert.equal(validateType({name:'
+            New   Car ',enabled:true,rules:DEFAULT_RULES}).name,'New Car');});
+            check('tag name min/max/over/empty and normalization',()=>{for(const
+            n of
+            [1,24])assert.equal(codePointLength(validateTagName('🚗'.repeat(n))),n);for(const
+            name of ['', ' ', '🚗'.repeat(25),
+            'a\nb'])reject(()=>validateTagName(name));assert.equal(validateTagName('
+            New   Car '),'New Car');}); check('body total limit across segments
+            and LF
+            preservation',()=>{assert.equal(prepareArticle({...base(),blocks:[text(''),car('a')]}).blocks.length,1);const
+            b=[text('🚗'.repeat(10000),'a'),car('a'),text('🚗'.repeat(10000),'b')];assert.equal(prepareArticle({...base(),blocks:b}).blocks.length,3);reject(()=>prepareArticle({...base(),blocks:[...b,text('x','c')]}));assert.equal(prepareArticle({...base(),blocks:[text('a\r\n\r\nb')]}).blocks[0].text,'a\n\nb');});
+            check('car description min/max/over/empty and 50/51
+            cards',()=>{for(const n of
+            [1,2000])assert.equal(codePointLength(prepareArticle({...base(),blocks:[car('🚗'.repeat(n))]}).blocks[0].description),n);for(const
+            description of ['', ' \n ',
+            '🚗'.repeat(2001)])reject(()=>prepareArticle({...base(),blocks:[car(description)]}));assert.equal(prepareArticle({...base(),blocks:Array.from({length:50},(_,i)=>car('a','c'+i))}).blocks.length,50);reject(()=>prepareArticle({...base(),blocks:Array.from({length:51},(_,i)=>car('a','c'+i))}));});
+            check('type card rules boundaries and contradictions',()=>{for(const
+            [min,max] of
+            [[0,1],[0,50],[50,50]])validateType({name:'a',enabled:true,rules:{text:{enabled:true,required:false},car:{enabled:true,min,max}}});for(const
+            [min,max] of
+            [[-1,1],[0,0],[0,51],[51,50],[2,1],[0.5,1]])reject(()=>validateType({name:'a',enabled:true,rules:{text:{enabled:true,required:false},car:{enabled:true,min,max}}}));assert.equal(articleRuleIssues([text('a')],DEFAULT_RULES).length,0);assert.ok(articleRuleIssues([text('a')],{text:{enabled:true,required:false},car:{enabled:true,min:1,max:50}}).length);});
+            check('zero/six selected tags and normalized duplicate
+            names',()=>{assert.equal(prepareArticle(base()).tags.length,0);assert.equal(prepareArticle({...base(),tags:Array.from({length:6},(_,i)=>({name:'tag'+i}))}).tags.length,6);assert.equal(prepareArticle({...base(),tags:[{name:'
+            New   Car '},{name:'new car'}]}).tags.length,1);}); check('invalid
+            templates and metadata cannot be silently dropped',()=>{for(const
+            blocks of
+            [[{...text('a'),type:'image'}],[{...text('a'),version:2}],[text('a'),text('b')],[{...car('a'),image:'x'}]])reject(()=>prepareArticle({...base(),blocks}));reject(()=>prepareArticle({...base(),authorId:randomUUID()}));});
+            console.log(JSON.stringify({passed:passed.length,checks:passed}));
+          truncated: false
+      argv_truncated: false
+      cwd_ref: .
+      status: passed
+      exit_code: 0
+      duration_ms: 144
+    - id: p3-verifier-transaction-boundaries
+      name:
+        text: P3 independent tag-limit rollback and configuration races
+        truncated: false
+      argv_display:
+        - text: --input-type=module
+          truncated: false
+        - text: --eval
+          truncated: false
+        - text: import assert from 'node:assert/strict'; import { execFile } from
+            'node:child_process'; import { promisify } from 'node:util'; import
+            { randomBytes,randomUUID } from 'node:crypto'; import { Pool } from
+            'pg'; import { runMigrations } from './apps/api/src/migrate.js';
+            import { createIdentityRepository } from
+            './apps/api/src/repository.js'; import { createAuthService } from
+            './apps/api/src/auth.js'; import { createCommunityRepository } from
+            './apps/api/src/community-repository.js'; import { DEFAULT_RULES }
+            from './packages/content-core/src/index.js'; const
+            exec=promisify(execFile),done=[];let pool,containerId,step='start
+            isolated PostgreSQL';try{const password=[REDACTED]'hex');const
+            started=await
+            exec('docker',['run','--detach','--rm','--label','vquan.test=p3-verifier-boundaries','--publish','127.0.0.1::5432','--tmpfs','/var/lib/postgresql/data','-e','POSTGRES_DB=vquan_test_p3_verifier','-e','POSTGRES_USER=verifier','-e','POSTGRES_PASSWORD=[REDACTED]postgres:17-alpine'],{timeout:30000});containerId=started.stdout.trim();assert.match(containerId,/^[a-f0-9]{64}$/);const
+            portResult=await
+            exec('docker',['port',containerId,'5432/tcp']);const
+            port=Number(portResult.stdout.trim().split(':').at(-1));assert.ok(port>0);pool=new
+            Pool({host:'127.0.0.1',port,database:'vquan_test_p3_verifier',user:'verifier',password});let
+            ready=false;for(let i=0;i<30;i++){try{await pool.query('SELECT
+            1');ready=true;break}catch{await new
+            Promise(r=>setTimeout(r,500))}}assert.ok(ready);await
+            runMigrations(pool);const
+            auth=createAuthService({repository:createIdentityRepository(pool),appId:'verifier-isolated',sessionTtlMs:600000,wechatClient:{async
+            code2Session(code){return{openid:code,unionid:null}}}});const
+            c=createCommunityRepository(pool),domainId='8b1c0e2a-4d3f-4a6b-9c1d-0e2f3a4b5c6d';const
+            platform=await
+            auth.bootstrapPlatformOperator({loginName:'verifier-platform',password});const
+            op=await auth.wechatLogin({code:'operator'}),member=await
+            auth.wechatLogin({code:'member'});assert.equal((await
+            pool.query('SELECT count(*)::int AS n FROM
+            article_types')).rows[0].n,0);assert.equal((await pool.query('SELECT
+            count(*)::int AS n FROM domain_tags')).rows[0].n,0);await
+            c.assignOperator(platform.accountId,domainId,{userId:op.account.userId,password});const
+            application=await c.applyToJoin(member.account.id,domainId);await
+            c.decideJoin(op.account.id,domainId,application.application.id,'approved');let
+            type=(await
+            c.saveType(op.account.id,domainId,null,{name:'Boundary',enabled:true,rules:DEFAULT_RULES})).type;const
+            article=(options={})=>({operationId:randomUUID(),typeId:type.id,typeVersion:type.version,title:'a',blocks:[{id:'body',type:'text',version:1,text:'a'}],tags:[],...options});const
+            counts=async()=> (await pool.query('SELECT (SELECT count(*)::int
+            FROM articles) AS articles,(SELECT count(*)::int FROM domain_tags)
+            AS tags')).rows[0];step='six resolved tags and duplicate ID/name
+            references';const first=await
+            c.publish(member.account.id,domainId,article({tags:Array.from({length:6},(_,i)=>({name:'Tag
+            '+i}))}));assert.equal(first.article.tags.length,6);const
+            duplicate=await
+            c.publish(member.account.id,domainId,article({tags:first.article.tags.flatMap(t=>[{id:t.id},{name:t.name.toLowerCase()}])}));assert.equal(duplicate.article.tags.length,6);assert.equal(new
+            Set(duplicate.article.tags.map(t=>t.id)).size,6);done.push(step);step='seven
+            distinct tags roll back article and every new tag';const
+            before=await counts();await
+            assert.rejects(c.publish(member.account.id,domainId,article({tags:Array.from({length:7},(_,i)=>({name:'Overflow
+            '+i}))})),{code:'validation_failed'});assert.deepEqual(await
+            counts(),before);done.push(step);step='stale type writers cannot
+            overwrite each other';const writes=await
+            Promise.allSettled(['Version A','Version
+            B'].map(name=>c.saveType(op.account.id,domainId,type.id,{name,enabled:true,version:type.version,rules:DEFAULT_RULES})));assert.equal(writes.filter(r=>r.status==='fulfilled').length,1);assert.equal(writes.find(r=>r.status==='rejected').reason.code,'type_changed');type=writes.find(r=>r.status==='fulfilled').value.type;assert.equal(type.version,2);done.push(step);step='stale
+            publish preserves data and creates no tags';const staleCounts=await
+            counts();await
+            assert.rejects(c.publish(member.account.id,domainId,article({typeVersion:1,tags:[{name:'Stale
+            create'}]})),{code:'type_changed'});assert.deepEqual(await
+            counts(),staleCounts);done.push(step);step='disable-type and
+            publication serialize to a permitted result';const raced=await
+            Promise.allSettled([c.publish(member.account.id,domainId,article()),c.saveType(op.account.id,domainId,type.id,{name:'Disabled',enabled:false,version:type.version,rules:DEFAULT_RULES})]);assert.equal(raced[1].status,'fulfilled');if(raced[0].status==='fulfilled'){assert.equal(raced[0].value.article.type.version,2);assert.equal((await
+            c.getArticle(raced[0].value.article.id)).article.type.name,type.name)}else
+            assert.equal(raced[0].reason.code,'type_changed');done.push(step);type=(await
+            c.saveType(op.account.id,domainId,null,{name:'Tag
+            race',enabled:true,rules:DEFAULT_RULES})).type;const tag=(await
+            c.createTag(op.account.id,domainId,'Race
+            Tag')).tag;step='disable-tag and publication serialize without
+            partial data';const tagCounts=await counts();const tagRace=await
+            Promise.allSettled([c.publish(member.account.id,domainId,article({tags:[{id:tag.id}]})),c.disableTag(op.account.id,domainId,tag.id)]);assert.equal(tagRace[1].status,'fulfilled');if(tagRace[0].status==='fulfilled'){assert.equal((await
+            c.getArticle(tagRace[0].value.article.id)).article.tags[0].name,'Race
+            Tag');assert.equal((await
+            counts()).articles,tagCounts.articles+1)}else{assert.equal(tagRace[0].reason.code,'tag_unavailable');assert.deepEqual(await
+            counts(),tagCounts)}await
+            assert.rejects(c.publish(member.account.id,domainId,article({tags:[{name:'race
+            tag'}]})),{code:'tag_unavailable'});done.push(step);console.log(JSON.stringify({passed:done.length,checks:done,database:'isolated
+            loopback
+            vquan_test_p3_verifier'}));}catch(error){console.error(JSON.stringify({failedStep:step,errorCode:error.code||error.name||'unknown'}));process.exitCode=1;}finally{if(pool)await
+            pool.end();if(containerId&&/^[a-f0-9]{64}$/.test(containerId))await
+            exec('docker',['stop','--time','1',containerId]).catch(()=>{console.error('temporary
+            verifier PostgreSQL cleanup failed');process.exitCode=1})}
+          truncated: false
+      argv_truncated: false
+      cwd_ref: .
+      status: passed
+      exit_code: 0
+      duration_ms: 4107
+  summary:
+    text: A1–A16 全部通过。已独立核对完整需求、实现、运行证据和公开读取；Runtime
+      四项基准检查及两项补充边界/事务检查均通过。本次验收未修改源码、数据库或工作流状态。
+    truncated: false
+  risks:
+    - text: 运行验收覆盖用户指定 HTTPS 测试后端、测试小程序及两个本地后台；正式 CloudRun 新版本尚未推送、部署或验证。
+      truncated: false
+    - text: 小程序证据来自开发者工具模拟器及真实编译组件事件链；真机、iOS、物理键盘和触屏尚未验证。原生确认弹窗分支使用官方 API mock
+        后恢复，不代表人工操作或原生弹窗视觉验证。
+      truncated: false
+  risks_truncated: false
+  completed_at: 2026-09-14T18:30:24.952Z
+history:
+  - goal_cycle: 1
+    iteration: 0
+    attempt: 0
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: Native confirmed acceptance criteria changed
+      truncated: false
+    completed_at: 2026-09-14T11:53:51.033Z
+  - goal_cycle: 2
+    iteration: 1
+    attempt: 1
+    outcome: pass
+    unresolved_ids: []
+    summary:
+      text: A1–A16 全部通过。已独立核对完整需求、实现、运行证据和公开读取；Runtime
+        四项基准检查及两项补充边界/事务检查均通过。本次验收未修改源码、数据库或工作流状态。
+      truncated: false
+    completed_at: 2026-09-14T18:30:24.952Z
+history_overflow:
+  dropped_entries: 0
+  first_dropped_at: null
+  last_dropped_at: null
+  outcome_counts:
+    pass: 0
+    fail: 0
+    blocked: 0
+    execution-error: 0
+    recovery: 0
+verification_result: pass
+verification_report: verification.md
+archived: true
+created_at: 2026-09-13T16:50:25.014Z
